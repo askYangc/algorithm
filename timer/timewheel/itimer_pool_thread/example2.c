@@ -42,7 +42,12 @@ int main()
 
 	ITIMER_THREAD_ON(handle1, evt1_timer,  NULL, 5, 2);
 	ITIMER_THREAD_ON(handle2, evt2_timer,  NULL, 9, 1);
-	
+
+
+	while(1) {
+		itimer_update_timer();
+		usleep(1000);
+	}
 	
 	return 0;
 }

@@ -349,7 +349,9 @@ static void itimer_evt_cb(void *p)
 	evt->running = 1;
 	for (; count > 0; count--) {
 		if (evt->callback && evt->running) {
-			evt->callback(evt->data, evt->user);
+			if(evt->push_task)
+				evt->push_task(evt);
+			//evt->callback(evt->data, evt->user);
 		}	else {
 			break;
 		}
@@ -390,6 +392,8 @@ void itimer_evt_destroy(itimer_evt *evt)
 	evt->running = 0;
 	evt->end = 0;
 	evt->evt_free = NULL;
+	evt->push_task = NULL;
+	evt->task = -1;
 }
 
 // start timer: repeat <= 0 (infinite repeat)

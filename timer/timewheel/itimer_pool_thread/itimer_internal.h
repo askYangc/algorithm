@@ -290,6 +290,8 @@ struct itimer_evt
 	struct stlc_list_head link;
 	u_int64_t handle;
 	evt_free_func_t evt_free;
+	void (*push_task)(struct itimer_evt*);
+	int task;
 	
 	IUINT32 period;
 	IUINT32 slap;

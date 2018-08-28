@@ -29,8 +29,11 @@ void itimer_unset(u_int64_t handle);
   } while (0)
 
 
-void itimer_run();
-void itimer_evt_pool_init();
-void itimer_mgr_thread_init(unsigned       interval);
+/*  thread check self timeout and do it */
+int itimer_update_timer();
+
+/* itimer thread start */
+void itimer_work_init(unsigned     interval);
+
 
 #endif
