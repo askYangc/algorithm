@@ -39,7 +39,7 @@ int main()
 {
 	int count = 20;
 	
-	//itimer_evt_pool_init();
+	itimer_evt_pool_init();
 	itimer_mgr_thread_init(1);
 
 	ITIMER_ON(evt1, evt1_timer,  NULL, 5, 2);
