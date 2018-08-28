@@ -10,6 +10,8 @@ typedef void (*itimer_func_t)(void *data, void *user);
 u_int64_t itimer_set(itimer_func_t f, void *data, void *user, u_int32_t timer, int repeat);
 void itimer_unset(u_int64_t handle);
 
+
+
 // 时间单位: 毫秒
 #define ITIMER_THREAD_ON(handle,func,arg,time,repeat) \
 	do { \
