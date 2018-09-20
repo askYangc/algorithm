@@ -9,8 +9,11 @@ std::shared_ptr<stock> StockFactory::get(const string &key)
 
 	std::shared_ptr<stock> st(wt.lock());
 	if( NULL == st) {
+        /*
+        将share_ptr<StockFactory>转换为weak_ptr<StockFactory>，同时bind会复制一份实参存储在bind内部，这里deleteStockcallback的第一个参数是引用，实际上也可以修改普通的factory形参，这里设置为引用是难得在调用deleteStockcallback时再复制一次std::weak_ptr<StockFactory>
+        */
 		st.reset(new stock(key), 
-			boost::bind(&StockFactory::deleteStockcallback, std::weak_ptr<StockFactory>(shared_from_this()), _1));
+			boost::bind(&StockFactory::deleteStockcallback, std::weak_ptr<StockFactory>(shared_from_this()), _1)); 
 		wt = st;
 	}
 	
