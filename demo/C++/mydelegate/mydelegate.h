@@ -75,12 +75,14 @@ public:
 	}
 	template<typename T1>
 	void notifyAll(T1 t1) {
+		MutexLockGuard guard(mutex);
 		for(obsIter it = observers.begin();it != observers.end();it++) {
 			it->second(t1);
 		}
 	}	
 	template<typename T1, typename T2>
 	void notifyAll(T1 t1, T2 t2) {
+		MutexLockGuard guard(mutex);
 		for(obsIter it = observers.begin();it != observers.end();it++) {
 			it->second(t1, t2);
 		}
