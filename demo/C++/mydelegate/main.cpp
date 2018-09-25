@@ -18,11 +18,16 @@ public:
 		cout << "tfunc " << endl;
 		return 0;
 	}
+	int tfunc(int a, int b) {
+		cout << "tfunc " << a << " and " << b << endl;
+		return 0;
+	}
+
 };
 
-int tvobs()
+int tvobs(int a)
 {
-	cout << "tvobs get " << endl;
+	cout << "tvobs get " << a << endl;
 	return 0;
 }
 
@@ -35,14 +40,14 @@ int nbaobs(int a, int b)
 
 int main(int argc, char **argv)
 {
-	mydelegate<boost::function <int (void)> > a;
+	mydelegate<boost::function <int (int)> > a;
 	test t;
 
-	a.add(boost::bind(&tvobs));
-	a.add(boost::bind(&nbaobs, 2, 5));
-	a.add(boost::bind(&test::tfunc, &t));
+	a.add(boost::bind(&tvobs, _1));
+	a.add(boost::bind(&nbaobs, _1, 5));
+	a.add(boost::bind(&test::tfunc, &t, _1, 77));
 
-	a.notifyAll();
+	a.notifyAll(555);
 
 	return 0;
 }
