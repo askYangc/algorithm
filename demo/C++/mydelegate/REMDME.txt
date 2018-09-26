@@ -1,0 +1,27 @@
+mydelegate写了2种版本
+
+mydelegate_once 有add和addonce 2个函数，
+notice:
+	mydelegate.add用于添加永久对象，不用考虑观察者对象声明周期的。
+	mydelegate.addonce用于添加只通知一次的对象，如果要考虑到对象生命周期，建议对端对象继承enable_shared_from_this,
+	并用shared_ptr管理对象。这样才不会出现对象的race condition。
+优点：不用显示调用remove函数取消回调。
+缺点：意外延长了对象生命周期，并且addonce只能通知一次，通知完成后需要自己重新注册，浪费了id和加大了编程复杂度。
+
+mydelegate 只有一个add函数
+notice:
+	mydelegate.add用于添加永久对象，不用考虑观察者对象声明周期的。
+	
+	如果要考虑到对端对象生命周期，建议对端对象继承enable_shared_from_this,bind时传递shared_from_this()
+	并用shared_ptr管理对象,并且在shared_ptr.reset()之前显式调用mydelegate.remove函数。
+	这样才不会出现对象的race condition。
+	重点:
+	1,用shared_ptr管理对象，传递shared_from_this()
+	2,释放对象前显式调用remove函数取消回调。
+优点：可以通知多次，不用重复注册。减少编程复杂度。
+缺点：意外延长了对象生命周期，并且需要显示调用mydelegate.remove函数，对编程带来了要求。
+
+
+上面两种写法都还可以。如果是自己用的话，还是用Mydelegate好一点，因为自己可以把握到对象什么时候该释放了。
+这样就可以自己显示调用remove函数。mydelegate_once的addonce的目的是为了不让对象显示调用remove函数。所以只好每次notify的时候删除一次delegate里面的shared_from_this()，所以才做了这么多复杂的事情。实际上没有好大必要，而且一直不notify的话，会让生命周期加长了非常多。增加了复杂度和困难。    
+    
