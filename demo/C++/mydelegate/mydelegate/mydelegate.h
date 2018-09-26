@@ -105,15 +105,15 @@ public:
 		boost::shared_ptr<std::map<int, T> > obs;
 		{
 			MutexLockGuard guard(mutex);
-			usleep(100);
+			//usleep(100);
 			obs = observers;
-			std::cout << "start notifyall" << std::endl;
+			//std::cout << "start notifyall" << std::endl;
 		}
 		
 		for(obsIter it = obs->begin();it != obs->end();it++) {
 			it->second(t1);
 		}
-		std::cout << "notifyAll over" << std::endl;		
+		//std::cout << "notifyAll over" << std::endl;		
 	}	
 	
 	template<typename T1, typename T2>
