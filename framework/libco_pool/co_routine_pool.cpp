@@ -88,7 +88,7 @@ struct stCoRoutine_pool_t
 };
 
 
-static stCoRoutine_pool_t *stCoRoutine_pool = new stCoRoutine_pool_t();
+static stCoRoutine_pool_t *stCoRoutine_pool = NULL;
 
 
 void get_stCoRoutine_handle()
@@ -217,8 +217,9 @@ void stCoRoutine_pool_start_gc()
 {
 	stCoRoutine_t *co;
 
-	if(!stCoRoutine_pool)
-		return;
+	if(!stCoRoutine_pool) {
+		stCoRoutine_pool = new stCoRoutine_pool_t();
+	}
 
 	co_create(&co, NULL, stCoRoutine_recovery, NULL);
 	co_resume(co);
