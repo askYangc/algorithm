@@ -14,7 +14,7 @@ min_heap 是最小堆实现的定时器，这个跟epoll_wait等IO多路复用�
 
 # 框架
 zebra thread 是开源软件zebra剥离出来的运行框架，用在单线程的程序里面效果很好
-
+libco_pool 是开源软件libco的代码，我做了部分修改。增加了协程池和修改开源版本错误的汇编代码。原链接(https://github.com/Tencent/libco)
 
 
 # 工具
