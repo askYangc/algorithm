@@ -22,9 +22,11 @@ tools/dead_lock_stub 是我自己写的一个测试死锁的代码，是根据�
 
 
 # 轮子
-demo里面写了一个测试的代码。
+demo里面写了几个可能有用的工具代码。
 mydelegate是自己实现的一个委托代码，主要是希望能模拟下C#的委托。mydelegate_once是一个变种，其实不应该使用。
 SignalSlot是从开源代码muduo中提出来的C++11的委托代码，如果使用C++11，可以方便使用实现观察者模式。以备学习之用
+mutex是从开源代码muduo中提出来的条件变量和锁的使用。
+AsyncLog是双缓冲异步日志代码(muduo)
 
 # 设计模式
 design_patterns
