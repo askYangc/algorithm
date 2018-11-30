@@ -19,7 +19,8 @@ libco_pool 是开源软件libco的代码，我做了部分修改。增加了协�
 
 # 工具
 tools/dead_lock_stub 是我自己写的一个测试死锁的代码，是根据网上大神说的通过图的算法来测试死锁的，可以检查到死锁和锁等待。已经在正式环境中使用过了。具体使用在内部的README.txt中说明
-
+tools/temp_Makefile
+用于linux下通用Makefile编译。
 
 # 轮子
 demo里面写了几个可能有用的工具代码。
