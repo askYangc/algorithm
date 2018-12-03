@@ -44,7 +44,6 @@ void log_append(char *fmt, ...)
 	pthread_mutex_unlock(&aslog->mutex_);
 }
 
-
 void *asynclog_threadFunc(void *p)
 {
 	int i = 0;
@@ -57,6 +56,7 @@ void *asynclog_threadFunc(void *p)
 	buffersToWrite.cout = 0;
 	arbuffer_init(&newBuffer1, ASYNCLOG_BUFMAX);
 	arbuffer_init(&newBuffer2, ASYNCLOG_BUFMAX);
+	arraybufferalign_init(&buffersToWrite, MAXBUFFER + 1);
 
 	output = logfile_init(aslog->basename_, aslog->rollSize_, 0, aslog->flushInterval_);
 
@@ -98,7 +98,7 @@ void *asynclog_threadFunc(void *p)
 		for (i = 0; i < buffersToWrite.cout; ++i) {
 			// FIXME: use unbuffered stdio FILE ? or use ::writev ?
 			logfile_append(output, buffersToWrite.buffers_[i].buffer, 
-				buffersToWrite.buffers_[i].cur - buffersToWrite.buffers_[i].buffer); /* 将数据缓冲进文件 */
+				arbuffer_used(&buffersToWrite.buffers_[i])); /* 将数据缓冲进文件 */
 		}
 
 		if (buffersToWrite.cout > 2){

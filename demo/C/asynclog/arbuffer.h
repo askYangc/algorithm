@@ -34,6 +34,11 @@ static inline int arbuffer_avail(arraybuffers_t *buffer)
 	return arbuffer_end(buffer) - buffer->cur;
 }
 
+static inline int arbuffer_used(arraybuffers_t *buffer)
+{
+	return buffer->cur - buffer->buffer;
+}
+
 static inline void arbuffer_append(arraybuffers_t *buffer, const char* logline, int len)
 {
 	memcpy(buffer->cur, logline, len);
@@ -44,8 +49,10 @@ static inline void arbuffer_move(arraybuffers_t *dst, arraybuffers_t *src)
 {
 	dst->buffer = src->buffer;
 	dst->cur = dst->buffer;
+	dst->len = src->len;
 	src->buffer = NULL;
 	src->cur = NULL;
+	src->len = 0;
 }
 
 static inline void arbuffer_reset(arraybuffers_t *buffer)
@@ -83,13 +90,8 @@ static inline void arraybufferalign_add_tail(arraybufferalign_t *t, arraybuffers
 		return ;
 	t->buffers_[t->cout++] = *buffer;
 	buffer->buffer = NULL;
-	buffer->cur = NULL;
-}
-
-static inline void arraybufferalign_move(arraybufferalign_t *dst, arraybufferalign_t *src)
-{
-	memcpy(dst, src, sizeof(arraybufferalign_t));
-	memset(src, 0, sizeof(arraybufferalign_t));
+	buffer->cur = NULL;
+	buffer->len = 0;
 }
 
 static inline void arraybufferalign_erase(arraybufferalign_t *t, int begin, int end)
@@ -101,6 +103,17 @@ static inline void arraybufferalign_erase(arraybufferalign_t *t, int begin, int 
 	if(begin >= 0) {
 		t->cout = begin;
 	}
+}
+
+static inline void arraybufferalign_move(arraybufferalign_t *dst, arraybufferalign_t *src)
+{
+	int max = (dst->max>src->cout)?src->cout:dst->max;
+
+	arraybufferalign_erase(dst, 0, dst->cout);
+	memcpy(dst->buffers_, src->buffers_, max*sizeof(arraybuffers_t));
+	memset(src->buffers_, 0, max*sizeof(arraybuffers_t));
+	dst->cout = max;
+	src->cout = 0;	
 }
 
 static inline void arraybufferalign_free(arraybufferalign_t *t)
@@ -125,6 +138,5 @@ static inline void arraybufferalign_init(arraybufferalign_t *t, int max)
 	t->buffers_ = calloc(1, sizeof(arraybuffers_t)*max);
 	t->max = max;
 }
-
 
 #endif

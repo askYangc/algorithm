@@ -6,6 +6,7 @@
 #include "condition.h"
 #include "arbuffer.h"
 
+//#define ASYNCLOG_BUFMAX 100
 #define ASYNCLOG_BUFMAX 1024*1024*4
 #define ASYNCLOG_KROLLSIZE 500*1000*1000
 #define ASYNCLOG_FLUSHTIME 3
