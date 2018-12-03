@@ -76,3 +76,43 @@ void condition_notifyAll(condition_t *t)
 	pthread_cond_broadcast(&t->pcond_);
 }
 
+
+//countdownlatch_t
+void countdownlatch_wait(countdownlatch_t *t)
+{
+	pthread_mutex_lock(t->condition_->lock_);
+	while(t->count > 0) {
+		condition_wait(t->condition_);
+	}
+	pthread_mutex_unlock(t->condition_->lock_);
+}
+
+void countdownlatch_countdown(countdownlatch_t *t)
+{
+	pthread_mutex_lock(t->condition_->lock_);
+	t->count--;
+	if(t->count == 0) {
+		condition_notifyAll(t->condition_);
+	}
+	pthread_mutex_unlock(t->condition_->lock_);
+}
+
+void countdownlatch_free(countdownlatch_t *t)
+{
+	if(t) {
+		if(t->condition_)
+			condition_free(t->condition_);
+		free(t);
+	}
+}
+
+countdownlatch_t *countdownlatch_init(pthread_mutex_t *lock, int count)
+{
+	countdownlatch_t *t = (countdownlatch_t*)calloc(1, sizeof(condition_t));
+	if(t) {
+		t->count = count;
+		t->condition_ = condition_init(lock);
+	}
+
+	return t;
+}
