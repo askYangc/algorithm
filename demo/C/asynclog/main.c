@@ -76,7 +76,7 @@ void do_log()
 	asynclog_init("test-out");
 	asynclog_start();
 
-	for(i = 0; i < 10000; i++) {
+	for(i = 0; i < 100000; i++) {
 		log_append("hello world %d\n", i);
 	}
 	

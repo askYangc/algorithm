@@ -8,133 +8,21 @@
 
 static asynclog_t *aslog = NULL;
 
-static inline int asbuffer_usable(asyncbuffers_t *buffer)
-{
-	return buffer->buffer?1:0;
-}
-
-
-static inline char *asbuffer_end(asyncbuffers_t *buffer)
-{
-	return buffer->buffer + ASYNCLOG_BUFMAX;
-}
-
-static inline int asbuffer_avail(asyncbuffers_t *buffer)
-{
-	return asbuffer_end(buffer) - buffer->cur;
-}
-
-static inline void asbuffer_append(asyncbuffers_t *buffer, const char* logline, int len)
-{
-	memcpy(buffer->cur, logline, len);
-	buffer->cur += len;
-}
-
-static inline void asbuffer_move(asyncbuffers_t *dst, asyncbuffers_t *src)
-{
-	dst->buffer = src->buffer;
-	dst->cur = dst->buffer;
-	src->buffer = NULL;
-	src->cur = NULL;
-}
-
-static inline void asbuffer_reset(asyncbuffers_t *buffer)
-{
-	buffer->cur = buffer->buffer;
-}
-
-static inline void asbuffer_clear(asyncbuffers_t *buffer)
-{
-	if(buffer) {
-		if(buffer->buffer) 
-			free(buffer->buffer);
-		buffer->buffer = buffer->cur = NULL;
-	}
-}
-
-static inline void asbuffer_add_tail(asyncbufferalign_t *t, asyncbuffers_t *buffer)
-{
-	if(t->cout >= t->max)
-		return ;
-	t->buffers_[t->cout++] = *buffer;
-	buffer->buffer = NULL;
-	buffer->cur = NULL;
-}
-
-void asbuffer_init(asyncbuffers_t *buffer)
-{
-	if(buffer) {
-		buffer->buffer = calloc(1, ASYNCLOG_BUFMAX);
-		buffer->cur = buffer->buffer;
-	}
-}
-
-static inline void asyncbufferalign_move(asyncbufferalign_t *dst, asyncbufferalign_t *src)
-{
-	memcpy(dst, src, sizeof(asyncbufferalign_t));
-	memset(src, 0, sizeof(asyncbufferalign_t));
-}
-
-static inline void asyncbufferalign_erase(asyncbufferalign_t *t, int begin, int end)
-{
-	int i = 0; 
-	for(i = begin; i < end; i++) {
-		if(t->buffers_[i].buffer) {
-			free(t->buffers_[i].buffer);
-		}
-		t->buffers_[i].buffer = NULL;
-		t->buffers_[i].cur = NULL;
-	}
-	if(begin >= 0) {
-		t->cout = begin;
-	}
-}
-
-static inline void asyncbufferalign_free(asyncbufferalign_t *t)
-{
-	if(t) {
-		if(t->buffers_) {
-			free(t->buffers_);
-			t->buffers_ = NULL;
-		}
-		t->cout = t->max = 0;
-	}
-}
-
-static inline void asyncbufferalign_clear(asyncbufferalign_t *t)
-{
-	int i = 0; 
-	for(i = 0; i < t->cout; i++) {
-		if(t->buffers_[i].buffer) {
-			free(t->buffers_[i].buffer);
-		}
-		t->buffers_[i].buffer = NULL;
-		t->buffers_[i].cur = NULL;
-	}
-	t->cout = 0;
-}
-
-void asyncbufferalign_init(asyncbufferalign_t *t, int max)
-{
-	t->buffers_ = calloc(1, sizeof(asyncbuffers_t)*max);
-	t->max = max;
-}
-
 
 void _log_append(const char* logline, int len)
 {
-	if (asbuffer_avail(&aslog->currentBuffer_) > len) {
-		asbuffer_append(&aslog->currentBuffer_, logline, len);	/* 长度能写，就直接加入到当前缓冲 */
+	if (arbuffer_avail(&aslog->currentBuffer_) > len) {
+		arbuffer_append(&aslog->currentBuffer_, logline, len);	/* 长度能写，就直接加入到当前缓冲 */
 	}else{
-		asbuffer_add_tail(&aslog->buffers_, &aslog->currentBuffer_); /* 长度不够则直接将当前缓存给弄进一个缓冲队列buffers_ */
+		arraybufferalign_add_tail(&aslog->buffers_, &aslog->currentBuffer_); /* 长度不够则直接将当前缓存给弄进一个缓冲队列buffers_ */
 
-		if(asbuffer_usable(&aslog->nextBuffer_)) {
-			asbuffer_move(&aslog->currentBuffer_, &aslog->nextBuffer_);
+		if(arbuffer_usable(&aslog->nextBuffer_)) {
+			arbuffer_move(&aslog->currentBuffer_, &aslog->nextBuffer_);
 		}else {
-			asbuffer_init(&aslog->currentBuffer_);	
+			arbuffer_init(&aslog->currentBuffer_, ASYNCLOG_BUFMAX);	
 		}
 
-		asbuffer_append(&aslog->currentBuffer_, logline, len);
+		arbuffer_append(&aslog->currentBuffer_, logline, len);
 		condition_notify(aslog->cond_);
 	}
 }
@@ -162,13 +50,13 @@ void *asynclog_threadFunc(void *p)
 	int i = 0;
 	//assert(aslog->running_ == true);
 	logfile_t *output;  
-	asyncbuffers_t newBuffer1;
-	asyncbuffers_t newBuffer2;
-	asyncbufferalign_t buffersToWrite;
+	arraybuffers_t newBuffer1;
+	arraybuffers_t newBuffer2;
+	arraybufferalign_t buffersToWrite;
 
 	buffersToWrite.cout = 0;
-	asbuffer_init(&newBuffer1);
-	asbuffer_init(&newBuffer2);
+	arbuffer_init(&newBuffer1, ASYNCLOG_BUFMAX);
+	arbuffer_init(&newBuffer2, ASYNCLOG_BUFMAX);
 
 	output = logfile_init(aslog->basename_, aslog->rollSize_, 0, aslog->flushInterval_);
 
@@ -184,11 +72,11 @@ void *asynclog_threadFunc(void *p)
 				/* 如果缓冲队列为空，则等待最多3秒时间或者被append唤醒来继续下一步操作 */
 				condition_waitForSeconds(aslog->cond_, aslog->flushInterval_);
 			}
-			asbuffer_add_tail(&aslog->buffers_, &aslog->currentBuffer_); /* 不管有没有数据都讲currentBuffer_的数据加入队列 */
-			asyncbufferalign_move(&buffersToWrite, &aslog->buffers_);		/* 临界的buffers_被交换为本地的buffters */
-			asbuffer_move(&aslog->currentBuffer_, &newBuffer1);		/* 将本地的buffer替换当前缓冲，应该是为了append快速结束 */
-			if (!asbuffer_usable(&aslog->nextBuffer_)) {
-				asbuffer_move(&aslog->nextBuffer_, &newBuffer2);		/* 将本地的buffer2替换备用缓冲，应该是为了append快速结束 */
+			arraybufferalign_add_tail(&aslog->buffers_, &aslog->currentBuffer_); /* 不管有没有数据都讲currentBuffer_的数据加入队列 */
+			arraybufferalign_move(&buffersToWrite, &aslog->buffers_);		/* 临界的buffers_被交换为本地的buffters */
+			arbuffer_move(&aslog->currentBuffer_, &newBuffer1);		/* 将本地的buffer替换当前缓冲，应该是为了append快速结束 */
+			if (!arbuffer_usable(&aslog->nextBuffer_)) {
+				arbuffer_move(&aslog->nextBuffer_, &newBuffer2);		/* 将本地的buffer2替换备用缓冲，应该是为了append快速结束 */
 			}
 			pthread_mutex_unlock(&aslog->mutex_);
 		}
@@ -204,7 +92,7 @@ void *asynclog_threadFunc(void *p)
 			fputs(buf, stderr);
 			logfile_append(output, buf, strlen(buf));
 
-			asyncbufferalign_erase(&buffersToWrite, 2, MAXBUFFER+1);
+			arraybufferalign_erase(&buffersToWrite, 2, MAXBUFFER+1);
 		}
 
 		for (i = 0; i < buffersToWrite.cout; ++i) {
@@ -216,31 +104,31 @@ void *asynclog_threadFunc(void *p)
 		if (buffersToWrite.cout > 2){
 			// drop non-bzero-ed buffers, avoid trashing
 			/* 在短时间内大量的append操作产生的多个队列只保留2个就可以了，用来分配给本地buffer1和buffer2 */
-			asyncbufferalign_erase(&buffersToWrite, 2, MAXBUFFER+1);
+			arraybufferalign_erase(&buffersToWrite, 2, MAXBUFFER+1);
 		}
 
-		if (!asbuffer_usable(&newBuffer1)) {
+		if (!arbuffer_usable(&newBuffer1)) {
 			//assert(!buffersToWrite.empty());
-			asbuffer_move(&newBuffer1, &buffersToWrite.buffers_[buffersToWrite.cout-1]); /* 保留的第一块buffer，分给本地buffer1 */
-			asbuffer_reset(&newBuffer1);
+			arbuffer_move(&newBuffer1, &buffersToWrite.buffers_[buffersToWrite.cout-1]); /* 保留的第一块buffer，分给本地buffer1 */
+			arbuffer_reset(&newBuffer1);
 			buffersToWrite.cout--;
 		}
 
-		if (!asbuffer_usable(&newBuffer2)) {
+		if (!arbuffer_usable(&newBuffer2)) {
 			//assert(!buffersToWrite.empty());
-			asbuffer_move(&newBuffer2, &buffersToWrite.buffers_[buffersToWrite.cout-1]);
-			asbuffer_reset(&newBuffer2);						/* 保留的第一块buffer，分给本地buffer2 */
+			arbuffer_move(&newBuffer2, &buffersToWrite.buffers_[buffersToWrite.cout-1]);
+			arbuffer_reset(&newBuffer2);						/* 保留的第一块buffer，分给本地buffer2 */
 			buffersToWrite.cout--;
 		}
 
-		asyncbufferalign_clear(&buffersToWrite);			/* 有可能nextBuffer_不是空的，所以newBuffers没有赋值给nextBuffer_，所以这里还多了一块，需要清除掉 */
+		arraybufferalign_clear(&buffersToWrite);			/* 有可能nextBuffer_不是空的，所以newBuffers没有赋值给nextBuffer_，所以这里还多了一块，需要清除掉 */
 		logfile_flush(output);
 	}
 	logfile_flush(output);
 	logfile_free(output);
-	asyncbufferalign_clear(&buffersToWrite);
-	asbuffer_clear(&newBuffer1);
-	asbuffer_clear(&newBuffer2);
+	arraybufferalign_clear(&buffersToWrite);
+	arbuffer_clear(&newBuffer1);
+	arbuffer_clear(&newBuffer2);
 	return NULL;
 }
 
@@ -281,9 +169,9 @@ void asynclog_def_init(char *basename, size_t rollSize, int flushInterval)
 		pthread_mutex_init(&aslog->mutex_, NULL);
 		aslog->latch_ = countdownlatch_init(&aslog->mutex_, 1);
 		aslog->cond_ = condition_init(&aslog->mutex_);
-		asbuffer_init(&aslog->currentBuffer_);
-		asbuffer_init(&aslog->nextBuffer_);
-		asyncbufferalign_init(&aslog->buffers_, MAXBUFFER + 1);
+		arbuffer_init(&aslog->currentBuffer_, ASYNCLOG_BUFMAX);
+		arbuffer_init(&aslog->nextBuffer_, ASYNCLOG_BUFMAX);
+		arraybufferalign_init(&aslog->buffers_, MAXBUFFER + 1);
 	}
 }
 

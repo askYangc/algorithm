@@ -4,22 +4,12 @@
 #include <stdio.h>
 #include <pthread.h>
 #include "condition.h"
+#include "arbuffer.h"
 
 #define ASYNCLOG_BUFMAX 1024*1024*4
 #define ASYNCLOG_KROLLSIZE 500*1000*1000
 #define ASYNCLOG_FLUSHTIME 3
 #define MAXBUFFER 23
-
-typedef struct {
-	char *buffer;
-	char *cur;
-}asyncbuffers_t;
-
-typedef struct {
-	asyncbuffers_t *buffers_;
-	int cout;
-	int max;
-}asyncbufferalign_t;
 
 typedef struct {
 	int flushInterval_;
@@ -31,9 +21,9 @@ typedef struct {
 	pthread_mutex_t mutex_;
 	countdownlatch_t *latch_;
 	condition_t *cond_;
-	asyncbuffers_t currentBuffer_;
-	asyncbuffers_t nextBuffer_;
-	asyncbufferalign_t buffers_;
+	arraybuffers_t currentBuffer_;
+	arraybuffers_t nextBuffer_;
+	arraybufferalign_t buffers_;
 	char logline[ASYNCLOG_BUFMAX];
 }asynclog_t;
 
