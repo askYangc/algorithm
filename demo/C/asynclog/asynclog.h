@@ -16,8 +16,9 @@ typedef struct {
 }asyncbuffers_t;
 
 typedef struct {
-	asyncbuffers_t buffers_[MAXBUFFER + 1];
+	asyncbuffers_t *buffers_;
 	int cout;
+	int max;
 }asyncbufferalign_t;
 
 typedef struct {

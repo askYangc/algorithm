@@ -52,6 +52,22 @@ static inline void asbuffer_clear(asyncbuffers_t *buffer)
 	}
 }
 
+static inline void asbuffer_add_tail(asyncbufferalign_t *t, asyncbuffers_t *buffer)
+{
+	if(t->cout >= t->max)
+		return ;
+	t->buffers_[t->cout++] = *buffer;
+	buffer->buffer = NULL;
+	buffer->cur = NULL;
+}
+
+void asbuffer_init(asyncbuffers_t *buffer)
+{
+	if(buffer) {
+		buffer->buffer = calloc(1, ASYNCLOG_BUFMAX);
+		buffer->cur = buffer->buffer;
+	}
+}
 
 static inline void asyncbufferalign_move(asyncbufferalign_t *dst, asyncbufferalign_t *src)
 {
@@ -74,6 +90,16 @@ static inline void asyncbufferalign_erase(asyncbufferalign_t *t, int begin, int 
 	}
 }
 
+static inline void asyncbufferalign_free(asyncbufferalign_t *t)
+{
+	if(t) {
+		if(t->buffers_) {
+			free(t->buffers_);
+			t->buffers_ = NULL;
+		}
+		t->cout = t->max = 0;
+	}
+}
 
 static inline void asyncbufferalign_clear(asyncbufferalign_t *t)
 {
@@ -88,24 +114,11 @@ static inline void asyncbufferalign_clear(asyncbufferalign_t *t)
 	t->cout = 0;
 }
 
-
-void asbuffer_init(asyncbuffers_t *buffer)
+void asyncbufferalign_init(asyncbufferalign_t *t, int max)
 {
-	if(buffer) {
-		buffer->buffer = calloc(1, ASYNCLOG_BUFMAX);
-		buffer->cur = buffer->buffer;
-	}
+	t->buffers_ = calloc(1, sizeof(asyncbuffers_t)*max);
+	t->max = max;
 }
-
-static inline void asbuffer_add_tail(asyncbufferalign_t *t, asyncbuffers_t *buffer)
-{
-	if(t->cout >= MAXBUFFER + 1)
-		return ;
-	t->buffers_[t->cout++] = *buffer;
-	buffer->buffer = NULL;
-	buffer->cur = NULL;
-}
-
 
 
 void _log_append(const char* logline, int len)
@@ -270,6 +283,7 @@ void asynclog_def_init(char *basename, size_t rollSize, int flushInterval)
 		aslog->cond_ = condition_init(&aslog->mutex_);
 		asbuffer_init(&aslog->currentBuffer_);
 		asbuffer_init(&aslog->nextBuffer_);
+		asyncbufferalign_init(&aslog->buffers_, MAXBUFFER + 1);
 	}
 }
 
