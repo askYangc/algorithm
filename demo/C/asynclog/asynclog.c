@@ -275,19 +275,6 @@ void asynclog_def_init(char *basename, size_t rollSize, int flushInterval)
 
 void asynclog_init(char *basename)
 {
-	aslog = calloc(1, sizeof(asynclog_t));	
-	if(aslog) {
-		aslog->running_ = 0;
-		aslog->flushInterval_ = ASYNCLOG_FLUSHTIME;
-		aslog->rollSize_ = ASYNCLOG_KROLLSIZE;
-		aslog_setbasename(basename);
-
-		pthread_mutex_init(&aslog->mutex_, NULL);
-		aslog->latch_ = countdownlatch_init(&aslog->mutex_, 1);
-		aslog->cond_ = condition_init(&aslog->mutex_);
-		asbuffer_init(&aslog->currentBuffer_);
-		asbuffer_init(&aslog->nextBuffer_);
-	}
-
+	asynclog_def_init(basename, ASYNCLOG_KROLLSIZE, ASYNCLOG_FLUSHTIME);
 }
 
