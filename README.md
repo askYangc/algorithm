@@ -14,20 +14,28 @@ min_heap 是最小堆实现的定时器，这个跟epoll_wait等IO多路复用�
 
 # 框架
 zebra thread 是开源软件zebra剥离出来的运行框架，用在单线程的程序里面效果很好
+
 libco_pool 是开源软件libco的代码，我做了部分修改。增加了协程池和修改开源版本错误的汇编代码。原链接(https://github.com/Tencent/libco)
 
 
 # 工具
 tools/dead_lock_stub 是我自己写的一个测试死锁的代码，是根据网上大神说的通过图的算法来测试死锁的，可以检查到死锁和锁等待。已经在正式环境中使用过了。具体使用在内部的README.txt中说明
+
 tools/temp_Makefile
 用于linux下通用Makefile编译。
 
 # 轮子
 demo里面写了几个可能有用的工具代码。
+
 mydelegate是自己实现的一个委托代码，主要是希望能模拟下C#的委托。mydelegate_once是一个变种，其实不应该使用。
+
 SignalSlot是从开源代码muduo中提出来的C++11的委托代码，如果使用C++11，可以方便使用实现观察者模式。以备学习之用
+
 mutex是从开源代码muduo中提出来的条件变量和锁的使用。
+
 AsyncLog是双缓冲异步日志代码(muduo)
+
+Cunit是使用Cunit的一个简单用例，Makefile_ctest.inc可以简单借鉴
 
 # 设计模式
 design_patterns
