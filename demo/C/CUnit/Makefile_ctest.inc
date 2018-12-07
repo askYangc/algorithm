@@ -53,17 +53,19 @@ ifdef ctest
 ifeq ($(CTEST_EXEC), )
 CTEST_EXEC = ctest_$(EXEC)
 endif
-$(warning $(CTEST_EXEC))
 
-EXECF = $(EXEC)
+ifeq ($(MAINF), )
+MAINF = $(EXEC)
+endif
+$(warning $(MAINF))
 
 ifeq ($(CTEST_SRCS), )
-CTEST_SRCS    = $(filter-out $(EXECF).c,$(wildcard *.c))
+CTEST_SRCS    = $(filter-out $(MAINF).c,$(wildcard *.c))
 #$(warning $(CTEST_SRCS))
 endif
 
 ifeq ($(CTEST_SRCSXX), )
-CTEST_SRCSXX    = $(filter-out $(EXECF).cpp,$(wildcard *.cpp))
+CTEST_SRCSXX    = $(filter-out $(MAINF).cpp,$(wildcard *.cpp))
 endif
 
 ifeq ($(CTEST_SHLIB), )
