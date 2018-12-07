@@ -13,7 +13,7 @@ genhtml app.info -o cc_result
 
 
 注意事项：
-test_*的文件都是用来编写测试用例的代码，普通文件不要取test_开头的命名名字
+test_*的文件都是用来编写测试用例的代码，普通文件不要取test_开头的命名名字，前缀可以通过变量CTEST_PRIFIX指定(test_%)
 
-想要生成测试用例，执行make ctest=1，编译出来的正式程序最好不要使用，使用make重新编译。
+想要生成测试用例，执行make ctest=1或者在Makefile里面添加变量CTEST_EXEC=xxx，编译出来的正式程序最好不要使用，使用make重新编译(需要makefile里面没有CTEST_EXEC变量)。
 

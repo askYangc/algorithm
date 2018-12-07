@@ -31,14 +31,26 @@ LDFLAGS +=
 
 VERBOSE	= 0
 
+ifndef CTEST_PRIFIX
+CTEST_PRIFIX = test_%
+endif
+
+ifdef CTEST_EXEC
+
+ifndef ctest
+ctest=1
+endif
+
+endif
+
 ifeq ($(SRCS), )
 #SRCS    = $(wildcard *.c)
-SRCS    = $(filter-out test_%,$(wildcard *.c))
+SRCS    = $(filter-out $(CTEST_PRIFIX),$(wildcard *.c))
 endif
 
 ifeq ($(SRCSXX), )
 #SRCSXX    = $(wildcard *.cpp)
-SRCSXX    = $(filter-out test_%,$(wildcard *.cpp))
+SRCSXX    = $(filter-out $(CTEST_PRIFIX),$(wildcard *.cpp))
 endif
 
 ifeq ($(SHLIB), )
@@ -51,13 +63,13 @@ endif
 ifdef ctest
 
 ifeq ($(CTEST_EXEC), )
-CTEST_EXEC = ctest_$(EXEC)
+CTEST_EXEC = cunit_$(EXEC)
 endif
 
 ifeq ($(MAINF), )
 MAINF = $(EXEC)
 endif
-$(warning $(MAINF))
+#$(warning $(MAINF))
 
 ifeq ($(CTEST_SRCS), )
 CTEST_SRCS    = $(filter-out $(MAINF).c,$(wildcard *.c))
@@ -137,7 +149,7 @@ $(EXEC): $(DEPLIB) $(OBJS)
 
 $(CTEST_EXEC): $(CTEST_DEPLIB) $(CTEST_OBJS)
 	@echo -e "  LD\t$@"
-	$(CC) $(CTEST_OBJS) $(LDFLAGS) $(CTEST_LDFLAGS) -o $@
+	@$(CC) $(CTEST_OBJS) $(LDFLAGS) $(CTEST_LDFLAGS) -o $@
 
 $(SHLIB): $(SRCS)
 	@echo -e "  LD\t$@"
