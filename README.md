@@ -37,6 +37,8 @@ AsyncLog是双缓冲异步日志代码(muduo)
 
 Cunit是使用Cunit的一个简单用例，Makefile_ctest.inc可以简单借鉴
 
+rbtree 是内核红黑树的实现。并增加了4个通用的宏，方便使用
+
 # 设计模式
 design_patterns
 这是我自己写的设计模式的简单demo和一些笔记。主要参考着《大话设计模式》来编写的，谢谢作者。
