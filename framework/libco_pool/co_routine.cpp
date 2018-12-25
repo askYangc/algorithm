@@ -736,12 +736,12 @@ static short EpollEvent2Poll( uint32_t events )
 	return e;
 }
 
-static stCoRoutineEnv_t* g_arrCoEnvPerThread[ 204800 ] = { 0 };
+static __thread stCoRoutineEnv_t* gCoEnvPerThread = NULL;
+
 void co_init_curr_thread_env()
 {
-	pid_t pid = GetPid();	
-	g_arrCoEnvPerThread[ pid ] = (stCoRoutineEnv_t*)calloc( 1,sizeof(stCoRoutineEnv_t) );
-	stCoRoutineEnv_t *env = g_arrCoEnvPerThread[ pid ];
+	gCoEnvPerThread = (stCoRoutineEnv_t*)calloc( 1, sizeof(stCoRoutineEnv_t) );
+	stCoRoutineEnv_t *env = gCoEnvPerThread;
 
 	env->iCallStackSize = 0;
 	struct stCoRoutine_t *self = co_create_env( env, NULL, NULL,NULL );
@@ -759,7 +759,7 @@ void co_init_curr_thread_env()
 }
 stCoRoutineEnv_t *co_get_curr_thread_env()
 {
-	return g_arrCoEnvPerThread[ GetPid() ];
+	return gCoEnvPerThread;
 }
 
 void OnPollProcessEvent( stTimeoutItem_t * ap )
