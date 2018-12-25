@@ -132,6 +132,28 @@ int main(int argc, char *argv[])
         }
     }
 
+	
+	if(1) {
+		struct rb_node *node = NULL;
+		for (node = rb_first(&root); node; node = rb_next(node)) {
+			struct memfs_file *pf = rb_entry(node, struct memfs_file, node);
+			rb_delete_node(&root, pf, node);
+			__free(pf);
+		}
+
+	}
+
+
+	printf("------find node-----\n");
+    /* Trasver all */
+    if (1) {
+        struct rb_node *node = NULL;
+        for (node = rb_first(&root); node; node = rb_next(node)) {
+            const struct memfs_file *pf = rb_entry(node, struct memfs_file, node);
+            printf("iterator: %s\t\t\t\t[OK]\n", pf->path);
+        }
+    }
+
     exit(EXIT_SUCCESS);
 }
 
