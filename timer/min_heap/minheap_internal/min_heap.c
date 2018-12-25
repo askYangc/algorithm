@@ -208,3 +208,18 @@ time_heap_t *time_heap_init()
 	return h;
 }
 
+void time_head_free(time_heap_t *heap)
+{
+	int i;
+	if(heap) {
+		for(i = 0; i < heap->cursize; i++) {
+			minheap_node_free(heap->nodes[i]);
+		}
+		if(heap->nodes) {
+			free(heap->nodes);
+			heap->nodes = NULL;
+		}
+		free(heap);
+	}
+}
+

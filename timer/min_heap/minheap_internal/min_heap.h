@@ -44,6 +44,7 @@ int time_heap_time_wait(time_heap_t *h, int *time_wait);
 void time_heap_tick(time_heap_t *h);
 
 time_heap_t *time_heap_init();
+void time_head_free(time_heap_t *heap);
 
 
 #endif
