@@ -154,6 +154,10 @@ int main(int argc, char *argv[])
         }
     }
 
+	if(root.rb_node == NULL) {
+		printf("rb_node is NULL\n");
+	}
+
     exit(EXIT_SUCCESS);
 }
 
