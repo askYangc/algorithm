@@ -162,4 +162,61 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 	*rb_link = node;
 }
 
+
+/* add by yangc */
+
+#define rb_insert(root, pos, type, member, func) do {\
+	struct rb_node **n = &((root)->rb_node), *parent = NULL;\
+	int insert_ = 1;\
+	while (*n) {\
+		type *this = container_of(*n, type, member);\
+		int result = func(this, pos);\
+		parent = *n;\
+		if(result < 0) {\
+			n = &((*n)->rb_left);\
+		}else if(result > 0) {\
+			n = &((*n)->rb_right);\
+		}else {\
+			printf("result == 0, rb_insert failed!!!!!!\n");\
+			insert_ = 0;\
+			break;\
+		}\
+	}\
+	if(insert_) {\
+		rb_link_node(&((pos)->member), parent, n);\
+		rb_insert_color(&((pos)->member), root);\
+	}\
+}while(0)
+
+#define rb_search(root, pos, type, member, func, idx) do {\
+	pos = NULL;\
+	type *n = NULL;\
+	struct rb_node *node = (root)->rb_node;\
+	while(node) {\
+		n = container_of(node, type, member);\
+		int result = func(n, idx);\
+		if(result < 0) {\
+			node = node->rb_left;\
+		}else if (result > 0) {\
+			node = node->rb_right;\
+		}else {\
+			pos = n;\
+			break;\
+		}\
+	}\
+}while(0)
+
+#define rb_delete_node(root, node, member) do {\
+	if(node) {\
+		rb_erase(&((node)->member), root);\
+	}\
+}while(0)
+
+#define rb_delete(root, type, member, func, idx) do {\
+	type *pos;\
+	rb_search(root, pos, type, member, func, idx);\
+	rb_delete_node(root, pos, member);\
+}while(0)
+				
+
 #endif	/* _LINUX_RBTREE_H */
