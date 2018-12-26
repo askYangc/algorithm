@@ -206,6 +206,32 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 	}\
 }while(0)
 
+#define rb_search_or_insert(root, pos, type, member, func, idx, init_func, arg...) do {\
+	struct rb_node **n = &((root)->rb_node), *parent = NULL;\
+	int insert_ = 1;\
+	pos = NULL;\
+	while (*n) {\
+		type *this = container_of(*n, type, member);\
+		int result = func(this, idx);\
+		parent = *n;\
+		if(result < 0) {\
+			n = &((*n)->rb_left);\
+		}else if(result > 0) {\
+			n = &((*n)->rb_right);\
+		}else {\
+			pos = this;\
+			insert_ = 0;\
+			break;\
+		}\
+	}\
+	if(insert_) {\
+		pos = init_func(arg);\
+		rb_link_node(&((pos)->member), parent, n);\
+		rb_insert_color(&((pos)->member), root);\
+	}\
+}while(0)
+
+
 #define rb_delete_node(root, node, member) do {\
 	if(node) {\
 		rb_erase(&((node)->member), root);\
