@@ -13,6 +13,7 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/epoll.h>
+#include <pthread.h>
 
 #include "rbtree.h"
 #include "min_heap.h"
@@ -75,6 +76,8 @@ typedef struct {
 	time_heap_t *heap;
 	int epollfd;
 	struct epoll_event evs[MAX_EVENT];
+
+	pthread_mutex_t lock;
 } cl_thread_master_t;
 
 typedef struct cl_thread_s {
@@ -95,6 +98,7 @@ typedef struct {
 	struct rb_node node;
 	int fd; 
 	int type;		/* CL_SOCKETS_UNUSED */
+	int op;			/* CL_EPOLL_ADD or CL_EPOLL_MOD */
 	cl_thread_t *t_read;
 	cl_thread_t *t_write;
 }cl_thread_socket_t;
@@ -113,6 +117,9 @@ typedef struct {
 #define CL_SOCKETS_WRITE 2
 #define CL_SOCKETS_READ_PERSIST 4
 #define CL_SOCKETS_WRITE_PERSIST 8
+
+#define CL_EPOLL_ADD 0
+#define CL_EPOLL_ADDED 1
 
 
 #define EV_READ		0x02
@@ -148,6 +155,15 @@ typedef int (* cl_thread_func_t)(cl_thread_t *);
 		thread = cl_thread_add_timer (master, func, arg, time); \
 	} while (0)
 
+#define CL_THREAD_TIMER_ON_LOCK(master,thread,func,arg,time) \
+  do { \
+	  pthread_mutex_lock(&(master)->lock);\
+	  if (thread != NULL) \
+		  cl_thread_cancel(thread); \
+	  thread = cl_thread_add_timer (master, func, arg, time); \
+	  pthread_mutex_unlock(&(master)->lock);\
+  } while (0)
+
 			
 #define CL_THREAD_EVENT_ON(master,thread,func,arg,val) \
   do { \
@@ -163,6 +179,18 @@ typedef int (* cl_thread_func_t)(cl_thread_t *);
         thread = NULL; \
       } \
   } while (0)
+
+#define CL_THREAD_OFF_LOCK(thread) \
+do { \
+  if (thread) \
+	{ \
+	  pthread_mutex_lock(&thread->master->lock);\
+	  cl_thread_cancel (thread); \
+	  pthread_mutex_unlock(&thread->master->lock);\
+	  thread = NULL; \
+	} \
+} while (0)
+	
 
 
 #define CL_THREAD_READ_OFF(thread)  CL_THREAD_OFF(thread)
@@ -182,6 +210,7 @@ extern void cl_thread_cancel(cl_thread_t *t);
 
 
 extern cl_thread_t *cl_thread_fetch(cl_thread_master_t *m, cl_thread_t *fetch);
+extern cl_thread_t *cl_thread_fetch_lock(cl_thread_master_t *m, cl_thread_t *fetch);
 extern void cl_thread_call(cl_thread_t *thread);
 extern RS cl_thread_init(cl_thread_master_t *m);
 extern void cl_thread_stop(cl_thread_master_t *m);

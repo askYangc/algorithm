@@ -8,7 +8,7 @@
 
 #define	cl_assert(b) _cl_assert(!(!(b)), __FILE__, __LINE__)
 
-void _cl_assert(int b, const char *file, int line)
+static inline void _cl_assert(int b, const char *file, int line)
 {
 	if ( ! b ) {
 		printf("%s line %d assert failed!!!\n", file, line);
@@ -105,7 +105,8 @@ cl_thread_t *cl_thread_add_read(cl_thread_master_t *m,
 		ev.events |= EPOLLOUT;
 	ev.data.ptr = s;
 
-	if(old == CL_SOCKETS_UNUSED) {
+	if(s->op == CL_EPOLL_ADD) {
+		s->op = CL_EPOLL_ADDED;
 		epoll_ctl(m->epollfd, EPOLL_CTL_ADD, sock, &ev);
 	}else {
 		epoll_ctl(m->epollfd, EPOLL_CTL_MOD, sock, &ev);
@@ -152,7 +153,8 @@ cl_thread_t *cl_thread_add_write(cl_thread_master_t *m,
 		ev.events |= EPOLLIN;
 	ev.data.ptr = s;
 
-	if(old == CL_SOCKETS_UNUSED) {
+	if(s->op == CL_EPOLL_ADD) {
+		s->op = CL_EPOLL_ADDED;
 		epoll_ctl(m->epollfd, EPOLL_CTL_ADD, sock, &ev);
 	}else {
 		epoll_ctl(m->epollfd, EPOLL_CTL_MOD, sock, &ev);
@@ -201,6 +203,7 @@ void _cl_thread_cancel_read(cl_thread_socket_t *s)
 {
 	struct epoll_event ev;
 	cl_thread_t *t = s->t_read;
+	int op;
 	
 	s->t_read = NULL;
 	s->type = s->type & ~CL_SOCKETS_READ;
@@ -208,8 +211,15 @@ void _cl_thread_cancel_read(cl_thread_socket_t *s)
 	if(s->type & CL_SOCKETS_WRITE) {
 		ev.events = EPOLLOUT;
 		ev.data.ptr = s;
-		epoll_ctl(t->master->epollfd, EPOLL_CTL_MOD, s->fd, &ev);
+		if(s->op == CL_EPOLL_ADD) {
+			s->op = CL_EPOLL_ADDED;
+			op = EPOLL_CTL_ADD;
+		}else {
+			op = EPOLL_CTL_MOD;
+		}
+		epoll_ctl(t->master->epollfd, op, s->fd, &ev);
 	}else {
+		s->op = CL_EPOLL_ADD;
 		epoll_ctl(t->master->epollfd, EPOLL_CTL_DEL, s->fd, NULL);
 	}
 
@@ -238,6 +248,7 @@ void _cl_thread_cancel_write(cl_thread_socket_t *s)
 {
 	struct epoll_event ev;
 	cl_thread_t *t = s->t_write;
+	int op;
 	
 	s->t_write = NULL;
 	s->type = s->type & ~CL_SOCKETS_WRITE;
@@ -245,8 +256,15 @@ void _cl_thread_cancel_write(cl_thread_socket_t *s)
 	if(s->type & CL_SOCKETS_READ) {
 		ev.events = EPOLLIN;
 		ev.data.ptr = s;
-		epoll_ctl(t->master->epollfd, EPOLL_CTL_MOD, s->fd, &ev);
+		if(s->op == CL_EPOLL_ADD) {
+			s->op = CL_EPOLL_ADDED;
+			op = EPOLL_CTL_ADD;
+		}else {
+			op = EPOLL_CTL_MOD;
+		}
+		epoll_ctl(t->master->epollfd, op, s->fd, &ev);
 	}else {
+		s->op = CL_EPOLL_ADD;
 		epoll_ctl(t->master->epollfd, EPOLL_CTL_DEL, s->fd, NULL);
 	}
 	
@@ -409,9 +427,17 @@ void cl_thread_do_event(cl_thread_master_t *m, struct epoll_event *ev)
 	}	
 
 	if(e.events == 0) {
+		s->op = CL_EPOLL_ADD;
 		epoll_ctl(m->epollfd, EPOLL_CTL_DEL, s->fd, NULL);
 	}else {
-		epoll_ctl(m->epollfd, EPOLL_CTL_MOD, s->fd, &e);
+		int op;
+		if(s->op == CL_EPOLL_ADD) {
+			s->op = CL_EPOLL_ADDED;
+			op = EPOLL_CTL_ADD;
+		}else {
+			op = EPOLL_CTL_MOD;
+		}
+		epoll_ctl(m->epollfd, op, s->fd, &e);
 	}
 
 	return ;
@@ -517,6 +543,53 @@ cl_thread_t *cl_thread_fetch(cl_thread_master_t *m, cl_thread_t *fetch)
 	return NULL;
 }
 
+cl_thread_t *cl_thread_fetch_lock(cl_thread_master_t *m, cl_thread_t *fetch)
+{
+	int i, n;
+	cl_thread_t *thread;
+	int expire = 0;
+
+	while (1) {
+		/* Normal event is the highest priority.  */
+		if ((thread = cl_thread_trim_head(&m->event)) != NULL) {
+			return cl_thread_run(m, thread, fetch);
+		}
+
+		pthread_mutex_lock(&m->lock);
+		/* Execute timer.  */
+		thread = (cl_thread_t*)cl_time_heap_tick(m->heap);
+		if(thread) {
+			stlc_list_del(&thread->link);
+			cl_thread_run(m, thread, fetch);
+			pthread_mutex_unlock(&m->lock);
+			return fetch;
+		}
+		pthread_mutex_unlock(&m->lock);
+
+		/* If there are any ready threads, process top of them.  */
+		if ((thread = cl_thread_trim_head(&m->ready)) != NULL) {
+			return cl_thread_run(m, thread, fetch);
+		}
+
+		/* Calculate select wait timer. */
+		expire = cl_thread_timer_wait(m);
+
+		n = epoll_wait(m->epollfd, m->evs, MAX_EVENT, expire);
+		if (n <= 0)
+		 	continue;
+
+		for(i = 0; i < n; i++) {
+			cl_thread_do_event(m, &m->evs[i]);
+		}
+			
+		if ((thread = cl_thread_trim_head(&m->ready)) != NULL) {
+			return cl_thread_run(m, thread, fetch);
+		}
+	}
+
+	return NULL;
+}
+
 /* We check thread consumed time. If the system has getrusage, we'll
    use that to get indepth stats on the performance of the thread.  If
    not - we'll use gettimeofday for some guestimation.  */
@@ -550,6 +623,8 @@ RS cl_thread_init(cl_thread_master_t *m)
 		close(m->epollfd);
 		return RS_ERROR;
 	}
+
+	pthread_mutex_init(&m->lock, NULL);
 	
 	return RS_OK;
 }
@@ -612,6 +687,7 @@ void cl_thread_stop(cl_thread_master_t *m)
 	}
 
 	cl_thread_rb_free(&m->sockets);
+	pthread_mutex_destroy(&m->lock);	
 }
 
 
