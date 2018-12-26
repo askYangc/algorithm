@@ -82,7 +82,6 @@ cl_thread_t *cl_thread_add_read(cl_thread_master_t *m,
 {
 	cl_thread_t *thread;
 	cl_thread_socket_t *s;
-	int old = 0;
 	struct epoll_event ev;
 
 	rb_search_or_insert(&m->sockets, s, cl_thread_socket_t, node, 
@@ -94,7 +93,6 @@ cl_thread_t *cl_thread_add_read(cl_thread_master_t *m,
 		return NULL;
 	}
 
-	old = s->type;	
 	thread = cl_thread_get(m, CL_THREAD_READ, func, arg);
 	thread->u.fd = sock;
 	cl_assert(s->t_read == NULL);
@@ -130,7 +128,6 @@ cl_thread_t *cl_thread_add_write(cl_thread_master_t *m,
 {
 	cl_thread_t *thread;
 	cl_thread_socket_t *s;
-	int old = 0;
 	struct epoll_event ev;
 
 	rb_search_or_insert(&m->sockets, s, cl_thread_socket_t, node, 
@@ -142,7 +139,6 @@ cl_thread_t *cl_thread_add_write(cl_thread_master_t *m,
 		return NULL;
 	}
 
-	old = s->type;
 	thread = cl_thread_get(m, CL_THREAD_WRITE, func, arg);
 	thread->u.fd = sock;
 	cl_assert(s->t_write == NULL);
