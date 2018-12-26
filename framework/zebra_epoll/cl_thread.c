@@ -64,6 +64,7 @@ static cl_thread_socket_t *cl_thread_socket_calloc(int sock)
 	cl_thread_socket_t *t = (cl_thread_socket_t*)calloc(1, sizeof(cl_thread_socket_t));
 	if(t) {
 		t->fd = sock;
+		t->op = CL_EPOLL_ADD;
 	}
 	return t;
 }
@@ -635,7 +636,7 @@ static void cl_thread_free(cl_thread_t *t)
 	free(t);
 }
 
-static void cl_thread_socket_free(cl_thread_socket_t *s)
+static void cl_thread_socket_free(cl_thread_master_t *m, cl_thread_socket_t *s)
 {
 	if(s->t_read) {
 		cl_thread_free(s->t_read);
@@ -643,6 +644,12 @@ static void cl_thread_socket_free(cl_thread_socket_t *s)
 	if(s->t_write) {
 		cl_thread_free(s->t_write);
 	}
+
+	if(s->op == CL_EPOLL_ADDED) {
+		s->op = CL_EPOLL_ADD;
+		epoll_ctl(m->epollfd, EPOLL_CTL_DEL, s->fd, NULL);
+	}
+	
 	free(s);
 }
 
@@ -658,7 +665,7 @@ static void cl_thread_free_all_thread(struct stlc_list_head *list)
 	}
 }
 
-void cl_thread_rb_free(struct rb_root *root)
+void cl_thread_rb_free(cl_thread_master_t *m, struct rb_root *root)
 {
 	cl_thread_socket_t *s;
 	struct rb_node *pos;
@@ -666,7 +673,7 @@ void cl_thread_rb_free(struct rb_root *root)
 		for(pos = rb_first(root); pos; pos = rb_first(root)) {
 			s = rb_entry(pos, cl_thread_socket_t, node);
 			rb_delete_node(root, s, node);
-			cl_thread_socket_free(s);
+			cl_thread_socket_free(m, s);
 		}
 	}
 	return;
@@ -681,12 +688,13 @@ void cl_thread_stop(cl_thread_master_t *m)
 
 	time_head_free(m->heap);
 	m->heap = NULL;
+	cl_thread_rb_free(m, &m->sockets);
+	
 	if(m->epollfd > 0) {
 		close(m->epollfd);
 		m->epollfd = 0;
 	}
 
-	cl_thread_rb_free(&m->sockets);
 	pthread_mutex_destroy(&m->lock);	
 }
 
