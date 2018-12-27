@@ -201,6 +201,7 @@ do { \
 #define CL_THREAD_READ_OFF(thread)  CL_THREAD_OFF(thread)
 #define CL_THREAD_WRITE_OFF(thread)  CL_THREAD_OFF(thread)
 #define CL_THREAD_TIMER_OFF(thread)  CL_THREAD_OFF(thread)
+#define CL_THREAD_TIMER_OFF_LOCK(thread)  CL_THREAD_OFF_LOCK(thread)
 
 extern cl_thread_t *cl_thread_add_read(cl_thread_master_t *m, 
 		cl_thread_func_t func, void *arg, SOCKET sock, int presist);
