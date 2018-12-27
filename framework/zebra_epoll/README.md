@@ -1,9 +1,10 @@
 # zebra_epoll
 
-zebra_epollÊÇ²Î¿¼zebraµÄ¸ñÊ½±àÐ´µÄ¿ò¼Ü£¬½«zebraµÄÏìÓ¦²¿·ÖÌæ»»ÁË¡£
-¶¨Ê±Æ÷Ìæ»»Îª×îÐ¡¶Ñ¹ÜÀí¡£
-ioµÄreadºÍwriteÁ´±íÌæ»»ÎªºìºÚÊ÷½Úµã¹ÜÀí¡£
-CL_THREAD_TIMER_ONÊÇÒ»´ÎÐÔ¶¨Ê±Æ÷£¬ÐèÒª×Ô¼ºÖØÐÂÉèÖÃ¶¨Ê±Æ÷¡£
-CL_THREAD_READ_ONºÍWRITE_ONÄ¬ÈÏÊÇ·ÇÓÀ¾Ã¼àÌý¡£ÐèÒª½øÈë»Øµ÷º¯Êýºó×Ô¼ºÖØÐÂÉèÖÃ¶¨Ê±Æ÷£¨ºÍzebraÒ»Ñù£©¡£¿ÉÒÔ¸üÐÂ²ÎÊýÉèÖÃÎªÓÀ¾Ã¼àÌý¡£ÉèÖÃÓÀ¾Ã¼àÌýºóµ÷ÓÃ»Øµ÷º¯ÊýÊ±¶ÔÓ¦µÄcl_thread_t¾Í²»»áÖ¸ÏòunuseÁ´±í£¬ÎÞÐèÖØÐÂÉèÖÃ¡£
+zebra_epollæ˜¯å‚è€ƒzebraçš„æ ¼å¼ç¼–å†™çš„æ¡†æž¶ï¼Œå°†zebraçš„å“åº”éƒ¨åˆ†æ›¿æ¢äº†ã€‚
 
-zebra_epollÐèÒªcl_thread.* rbtree.* min_heap.* stlc_list.h
+å®šæ—¶å™¨æ›¿æ¢ä¸ºæœ€å°å †ç®¡ç†ã€‚
+ioçš„readå’Œwriteé“¾è¡¨æ›¿æ¢ä¸ºçº¢é»‘æ ‘èŠ‚ç‚¹ç®¡ç†ã€‚
+CL_THREAD_TIMER_ONæ˜¯ä¸€æ¬¡æ€§å®šæ—¶å™¨ï¼Œéœ€è¦è‡ªå·±é‡æ–°è®¾ç½®å®šæ—¶å™¨ã€‚
+CL_THREAD_READ_ONå’ŒWRITE_ONé»˜è®¤æ˜¯éžæ°¸ä¹…ç›‘å¬ã€‚éœ€è¦è¿›å…¥å›žè°ƒå‡½æ•°åŽè‡ªå·±é‡æ–°è®¾ç½®å®šæ—¶å™¨ï¼ˆå’Œzebraä¸€æ ·ï¼‰ã€‚å¯ä»¥æ›´æ–°å‚æ•°è®¾ç½®ä¸ºæ°¸ä¹…ç›‘å¬ã€‚è®¾ç½®æ°¸ä¹…ç›‘å¬åŽè°ƒç”¨å›žè°ƒå‡½æ•°æ—¶å¯¹åº”çš„cl_thread_tå°±ä¸ä¼šæŒ‡å‘unuseé“¾è¡¨ï¼Œæ— éœ€é‡æ–°è®¾ç½®ã€‚
+
+zebra_epolléœ€è¦cl_thread.* rbtree.* min_heap.* stlc_list.h
