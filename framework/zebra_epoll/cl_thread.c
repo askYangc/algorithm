@@ -76,6 +76,22 @@ static cl_thread_socket_t *cl_thread_socket_lookup(struct rb_root *root, int fd)
 	return s;
 }
 
+void cl_thread_socket_show(cl_thread_socket_t *s)
+{
+	printf("s->fd: %d, s->type: %d, s->op: %d\n", s->fd, s->type, s->op);
+	if(s->t_read) {
+		printf("t_read->type: %d\n", s->t_read->type);
+	}else {
+		printf("t_read is NULL\n");
+	}
+	if(s->t_write) {
+		printf("t_write->type: %d\n", s->t_write->type);
+	}else {
+		printf("t_write is NULL\n");
+	}	
+}
+
+
 /* Add new read thread. */
 cl_thread_t *cl_thread_add_read(cl_thread_master_t *m, 
 		cl_thread_func_t func, void *arg, SOCKET sock, int presist)
@@ -439,6 +455,27 @@ void cl_thread_do_event(cl_thread_master_t *m, struct epoll_event *ev)
 
 	return ;
 }
+
+cl_thread_t *cl_thread_get_read(cl_thread_master_t *m, int sock)
+{
+	cl_thread_socket_t *s = cl_thread_socket_lookup(&m->sockets, sock);
+	if(s) {
+		return s->t_read;
+	}
+
+	return NULL;
+}
+
+cl_thread_t *cl_thread_get_write(cl_thread_master_t *m, int sock)
+{
+	cl_thread_socket_t *s = cl_thread_socket_lookup(&m->sockets, sock);
+	if(s) {
+		return s->t_write;
+	}
+
+	return NULL;
+}
+
 
 static void cl_thread_add_unuse(cl_thread_master_t *m, cl_thread_t *t)
 {

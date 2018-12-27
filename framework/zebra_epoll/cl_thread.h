@@ -18,6 +18,11 @@ extern "C" {
 #include "rbtree.h"
 #include "min_heap.h"
 
+#ifndef true
+#define true 1
+#define false 0
+#endif
+
 #define SOCKET int
 
 // MAX_SOCKET will be 2^MAX_SOCKET_P
@@ -138,13 +143,13 @@ typedef int (* cl_thread_func_t)(cl_thread_t *);
 #define CL_THREAD_READ_ON(master,thread,func,arg,sock) \
   do { \
     if (! thread) \
-      thread = cl_thread_add_read (master, func, arg, sock, true); \
+      thread = cl_thread_add_read (master, func, arg, sock, false); \
   } while (0)
 
 #define CL_THREAD_WRITE_ON(master,thread,func,arg,sock) \
   do { \
     if (! thread) \
-      thread = cl_thread_add_write (master, func, arg, sock, true); \
+      thread = cl_thread_add_write (master, func, arg, sock, false); \
   } while (0)
 
 // 时间单位: 毫秒
@@ -214,6 +219,8 @@ extern cl_thread_t *cl_thread_fetch_lock(cl_thread_master_t *m, cl_thread_t *fet
 extern void cl_thread_call(cl_thread_t *thread);
 extern RS cl_thread_init(cl_thread_master_t *m);
 extern void cl_thread_stop(cl_thread_master_t *m);
+extern cl_thread_t *cl_thread_get_read(cl_thread_master_t *m, int sock);
+extern cl_thread_t *cl_thread_get_write(cl_thread_master_t *m, int sock);
 
 
 #ifdef __cplusplus
