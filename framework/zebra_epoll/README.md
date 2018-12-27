@@ -1,6 +1,6 @@
 # zebra_epoll
 
-zebra_epoll是参考zebra的格式编写的框架，将zebra的响应部分替换了。
+zebra_epoll是修改zebra的格式编写的框架，将zebra的相应部分替换了。
 
 定时器替换为最小堆管理。
 
