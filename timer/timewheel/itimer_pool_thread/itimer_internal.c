@@ -48,6 +48,7 @@ void itimer_core_init(itimer_core *core, IUINT32 jiffies)
 		ilist_init(&core->tv4.vec[i]);
 		ilist_init(&core->tv5.vec[i]);
 	}
+    pthread_mutex_init(&core->lock, NULL);
 }
 
 
@@ -107,10 +108,19 @@ void itimer_node_destroy(itimer_node *node)
 		assert(node->state == ITIMER_NODE_STATE_OK);
 		return ;
 	}
+
+    if(node->core != NULL) {
+        itimer_core_lock(node->core);
+    }
 	if (!ilist_is_empty(&node->head)) {
 		ilist_del_init(&node->head);
+        itimer_core_unlock(node->core);
 		node->core = NULL;
 	}
+    if(node->core != NULL) {
+        itimer_core_unlock(node->core);
+    }
+    
 	node->state = ITIMER_NODE_STATE_BAD;
 	node->callback = NULL;
 	node->data = NULL;
@@ -233,6 +243,7 @@ static void itimer_internal_update(itimer_core *core, IUINT32 jiffies)
 	#define ITIMER_INDEX(C, N) \
 		(((C)->timer_jiffies >> (ITVR_BITS + (N) * ITVN_BITS)) & ITVN_MASK)
 	while ((IINT32)(jiffies - core->timer_jiffies) >= 0) {
+        itimer_core_lock(core);
 		ilist_head queued;
 		int index = core->timer_jiffies & ITVR_MASK;
 		ilist_init(&queued);
@@ -254,6 +265,8 @@ static void itimer_internal_update(itimer_core *core, IUINT32 jiffies)
 		}
 		core->timer_jiffies++;
 		ilist_splice_init(core->tv1.vec + index, &queued);
+        itimer_core_unlock(core);
+        
 		while (!ilist_is_empty(&queued)) {
 			itimer_node *node;
 			void (*fn)(void*);
@@ -339,11 +352,15 @@ static void itimer_evt_cb(void *p)
 	}
 	if (stop == 0) {
 		IUINT32 interval = mgr->interval;
+        itimer_core_lock(&mgr->core);
 		IUINT32 expires = (evt->slap - current + interval - 1) / interval;
 		if (expires >= 0x70000000) expires = 0x70000000;
 		itimer_node_add(&mgr->core, &evt->node, mgr->jiffies + expires);
+        itimer_core_unlock(&mgr->core);
 	}	else {
+        itimer_core_lock(&mgr->core);
 		itimer_evt_stop(mgr, evt);
+        itimer_core_unlock(&mgr->core);
 		evt->end = 1;
 	}
 	evt->running = 1;
@@ -403,15 +420,19 @@ void itimer_evt_start(itimer_mgr *mgr, itimer_evt *evt,
 	IUINT32 interval = mgr->interval;
 	IUINT32 expires;
 	if (evt->mgr) {
+        itimer_core_lock(&evt->mgr->core);
 		itimer_evt_stop(evt->mgr, evt);
+        itimer_core_unlock(&evt->mgr->core);
 	}
 	evt->period = period;
 	evt->repeat = repeat;
 	evt->slap = mgr->current + period;
 	evt->mgr = mgr;
+    itimer_core_lock(&mgr->core);
 	expires = (evt->slap - mgr->current + interval - 1) / interval;
 	if (expires >= 0x70000000) expires = 0x70000000;
 	itimer_node_add(&mgr->core, &evt->node, mgr->jiffies + expires);
+    itimer_core_unlock(&mgr->core);
 	evt->running = 0;
 }
 

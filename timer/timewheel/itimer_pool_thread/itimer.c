@@ -23,6 +23,7 @@
 #define itimer_task_unlock(task) pthread_mutex_unlock(&((task)->lock));
 
 
+
 enum {
 	ITIMER_TASK_USEED = 1,
 	ITIMER_TASK_UNUSE = 2,
@@ -168,16 +169,13 @@ static itimer_evt *itimer_evt_bucket_lookup(u_int64_t handle)
 {
 	itimer_evt *evt = NULL;
 	int key = itimer_bucket_hash(handle);
-
-	itimer_pool_lock(evt_pool);
+    
 	stlc_list_for_each_entry(evt, &evt_pool->bucket[key], link) {
 		if(evt->handle == handle) {
-			itimer_pool_unlock(evt_pool);
 			return evt;
 		}
 	}
 
-	itimer_pool_unlock(evt_pool);
 	return NULL;
 }
 
@@ -187,11 +185,6 @@ static void itimer_evt_del_bucket(itimer_evt *evt)
 	if(evt) {
 		stlc_list_del(&evt->link);
 	}
-}
-
-static int pid_hash(u_int64_t handle)
-{
-	
 }
 
 static int push_task_to_q(itimer_task_t *task, int key)
@@ -257,11 +250,11 @@ static itimer_evt *itimer_evt_pool_alloc()
 static void itimer_evt_pool_free(itimer_evt *evt)
 {
 	if(evt) {
-		itimer_pool_lock(evt_pool);
+		//itimer_pool_lock(evt_pool);
 		itimer_evt_del_bucket(evt);
 		stlc_list_add_tail(&evt->link, &evt_pool->_free);
 		evt_pool->unuse++;
-		itimer_pool_unlock(evt_pool);
+		//itimer_pool_unlock(evt_pool);
 	}
 }
 
@@ -359,11 +352,13 @@ void itimer_unset(u_int64_t handle)
 		return ;
 	}
 
+    itimer_pool_lock(evt_pool);
 	evt = itimer_evt_bucket_lookup(handle);
 	if(evt) {
 		itimer_evt_destroy(evt);
 		itimer_evt_pool_free(evt);
 	}
+    itimer_pool_unlock(evt_pool);
 }
 
 void itimer_run()
@@ -450,7 +445,6 @@ void itimer_task_init(itimer_thread_mgr_t *mgr)
 
 void itimer_task_pool_init()
 {
-	int i = 0;
 	assert(!task_pool);
 	task_pool = (itimer_task_pool_t*)calloc(1, sizeof(itimer_task_pool_t));
 	assert(task_pool);
@@ -461,7 +455,7 @@ void itimer_task_pool_init()
 	pthread_mutex_init(&task_pool->lock, NULL);
 }
 
-void itimer_mgr_thread_init(unsigned       interval)
+void itimer_mgr_thread_init(unsigned             interval)
 {
 	thread_mgr = (itimer_thread_mgr_t*)calloc(1, sizeof(itimer_thread_mgr_t));
 	assert(thread_mgr);
@@ -472,7 +466,7 @@ void itimer_mgr_thread_init(unsigned       interval)
 	itimer_mgr_init(&thread_mgr->mgr, GetTickMS(), interval);
 }
 
-void itimer_work_init(unsigned     interval)
+void itimer_work_init(unsigned          interval)
 {
 	pthread_t pid;
 	itimer_evt_pool_init();

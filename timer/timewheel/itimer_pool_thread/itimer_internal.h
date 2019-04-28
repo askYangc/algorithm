@@ -10,8 +10,12 @@
 #define __ITIMER__INTERNAL_H__
 
 #include <stddef.h>
+#include <pthread.h>
 #include "ds_types.h"
 #include "stlc_list.h"
+
+#define itimer_core_lock(core) pthread_mutex_lock(&((core)->lock));
+#define itimer_core_unlock(core) pthread_mutex_unlock(&((core)->lock));
 
 //=====================================================================
 // 32BIT INTEGER DEFINITION 
@@ -214,6 +218,7 @@ struct itimer_core {
 	struct itimer_vec tv3;
 	struct itimer_vec tv4;
 	struct itimer_vec tv5;
+    pthread_mutex_t lock;
 };
 
 struct itimer_node {
