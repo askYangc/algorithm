@@ -320,6 +320,7 @@ static int GetTask()
 			printf("key is -1, tid is %u\n", tid);
 			break;
 		}
+        itimer_task_unlock(q);
 	}while(1);
 		
 	return key;	
