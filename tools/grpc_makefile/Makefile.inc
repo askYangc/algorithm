@@ -108,9 +108,9 @@ $(EXEC): $(DEPLIB) $(OBJS)
 	@echo -e "  LD\t$@"
 	@$(CC) $(OBJS) $(LDFLAGS) -o $@
 
-$(CPPEXEC): $(DEPLIB) $(OBJS)
+$(CPPEXEC): $(DEPLIB) $(OBJS) $(PBOBJ) $(GBOBJ)
 	@echo -e "  LD\t$@"
-	@$(CPP) $(OBJS) $(LDFLAGS) -o $@
+	@$(CPP) $(OBJS) $(PBOBJ) $(GBOBJ) $(LDFLAGS) -o $@
 
 $(SHLIB): $(SRCS)
 	@echo -e "  LD\t$@"
