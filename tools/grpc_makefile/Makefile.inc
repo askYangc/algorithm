@@ -118,8 +118,8 @@ $(SHLIB): $(SRCS)
 
 $(SLIB): $(OBJS)
 	@echo -e "  AR\t$@"
-	$(AR) cr $@ $(OBJS)
-	$(RANLIB) $@
+	@$(AR) cr $@ $(OBJS)
+	@$(RANLIB) $@
 
 ifeq ($(VERBOSE), 0)
 $(SUBDIRS)::
