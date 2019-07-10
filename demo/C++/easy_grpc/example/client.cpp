@@ -41,20 +41,51 @@ public:
         }else {
             printf("RPC failed\n");
         }
-    }
-  
-private:
-    
+    }    
 };
 
-int main()
-{   
+void async_test()
+{
     AsyncClient client("127.0.0.1:50051");
     GreeterImpl impl(client);    
     impl.SayHello("yangchuan");
     impl.SayHello("yangchuan1");
 
     sleep(2);
+}
+
+class GreeterImpl2 : public SyncService<Greeter> {
+public:
+    GreeterImpl2(SyncClient &client):SyncService<Greeter>(client) {}
+
+    int SayHello(std::string name) {
+        HelloRequest req;
+        req.set_name(name);
+
+        SyncClientTask<HelloReply> *task = doRpc<HelloRequest, HelloReply>(req, SetSyncRpcFunc(Greeter, SayHello));
+        if(task->getStatus().ok()) {
+            printf("Sync get message: %s\n", task->getReply().message().c_str());
+        }else {
+            printf("Sync do RPC failed\n");
+        }
+        delete task;
+        return 0;
+    }
+};
+
+void sync_test()
+{
+    SyncClient client("127.0.0.1:50051");
+    GreeterImpl2 impl(client);  
+    impl.SayHello("yangchuan");
+
+    
+}
+
+int main()
+{   
+    //async_test();
+    sync_test();
 
     return 0;
 }

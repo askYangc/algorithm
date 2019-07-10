@@ -205,4 +205,59 @@ protected:
 
 
 
+//sync client
+class SyncClient {
+public:
+    explicit SyncClient(std::string addr):server_addr(addr) {}
+    
+    std::string get_server_addr() { return server_addr; }
+    
+private:
+    std::string server_addr;
+};
+
+template<typename K, typename T>
+using doRpcFunc = boost::function<Status (ClientContext*, const K&, T*)>;
+
+template<typename T>
+class SyncClientTask {
+public:
+    T &getReply() { return reply;}
+    ClientContext &getClientContext() { return context; }
+    Status &getStatus() { return status; }
+    void setStatus(Status status) { this->status = status;}
+private:
+    T reply;
+    ClientContext context;
+    Status status;
+};
+
+template <typename T>
+class SyncService {
+public:
+    explicit SyncService(SyncClient &client):client_(client) {
+        std::shared_ptr<Channel> channel = grpc::CreateChannel(
+            client_.get_server_addr(), grpc::InsecureChannelCredentials());
+        stub_ = T::NewStub(channel);
+    }
+
+
+    //::grpc::Status SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response) override;
+#define SetSyncRpcFunc(Service, fb) boost::bind(&Service::Stub::fb, stub_.get(), _1, _2, _3)
+
+    template<typename K, typename N>
+    SyncClientTask<N> *doRpc(const K &req, doRpcFunc<K,N> fb) {
+        SyncClientTask<N> *task = new SyncClientTask<N>();
+        Status status = fb(&task->getClientContext(), req, &task->getReply());
+        task->setStatus(status);
+        return task;
+    }
+
+
+protected:
+    SyncClient &client_;
+    std::unique_ptr<typename T::Stub> stub_;
+};
+
+
 #endif
