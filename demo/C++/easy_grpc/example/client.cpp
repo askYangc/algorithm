@@ -5,12 +5,16 @@ using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
 
-
-
-
-HelloReply *PrepareAsyncSayHello1(::grpc::ClientContext* context, const HelloRequest& request, ::grpc::CompletionQueue* cq) 
-{
-    return NULL;
+void local_getHello(AsyncClientTask *task) {
+    printf("local_getHello\n");
+    ClientTask<HelloReply> clientTask(task);
+    //AsyncClientTaskT<HelloReply> *t = static_cast<AsyncClientTaskT<HelloReply> *>(task);
+    //printf("local_getHello %s\n", clientTask.getReply().message().c_str());
+    if(clientTask.getStatus().ok()) {
+        printf("local_getHello %s\n", clientTask.getReply().message().c_str());
+    }else {
+        printf("RPC failed\n");
+    }
 }
 
 
@@ -21,14 +25,22 @@ public:
         HelloRequest req;
         req.set_name(name);
 
-        //client_.doRpc1<HelloReply>(req, SayHelloFb());
-        client_.doRpc<HelloRequest, HelloReply>(req, SayHelloFb());
+        //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetCbFunc(GreeterImpl::getHello));
+        client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), local_getHello);
         return 0;
     }
+  
 
-    PrepareFunc<HelloRequest, HelloReply> SayHelloFb() {
-        return boost::bind(&Greeter::Stub::PrepareAsyncSayHello, stub_.get(), _1, _2, _3);
-        //return boost::bind(PrepareAsyncSayHello, _1, _2, _3);
+    void getHello(AsyncClientTask *task) {
+        printf("getHello\n");
+        ClientTask<HelloReply> clientTask(task);
+        //AsyncClientTaskT<HelloReply> *t = static_cast<AsyncClientTaskT<HelloReply> *>(task);
+        //printf("local_getHello %s\n", clientTask.getReply().message().c_str());
+        if(clientTask.getStatus().ok()) {
+            printf("getHello %s\n", clientTask.getReply().message().c_str());
+        }else {
+            printf("RPC failed\n");
+        }
     }
   
 private:
@@ -37,9 +49,12 @@ private:
 
 int main()
 {   
-    AsyncClient client("127.0.0.1:5051");
+    AsyncClient client("127.0.0.1:50051");
     GreeterImpl impl(client);    
+    impl.SayHello("yangchuan");
+    impl.SayHello("yangchuan1");
 
+    sleep(2);
 
     return 0;
 }

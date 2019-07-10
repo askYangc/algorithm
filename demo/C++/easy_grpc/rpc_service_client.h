@@ -20,8 +20,7 @@ using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
 
-//std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::helloworld::HelloReply>>
-
+class AsyncClientTask;
 
 //std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::helloworld::HelloReply>> 
 //PrepareAsyncSayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq) 
@@ -33,24 +32,33 @@ using PrepareFunc = boost::function<std::unique_ptr< ClientAsyncResponseReader< 
 //using PrepareFunc = boost::function<void* (ClientContext*,T&,CompletionQueue*)>;
 //typedef boost::function<void* (void)> PrepareFunc;
 //typedef boost::function<void* (ClientContext*, CompletionQueue*)> PrepareFunc;
-typedef boost::function<void (void)> RpcCbFunc;
-
+typedef boost::function<void (AsyncClientTask*)> RpcCbFunc;
+typedef void (*RpcCb)(AsyncClientTask*);
 
 
 
 
 class AsyncClientTask {
 public:
-    void setCb(RpcCbFunc cb) {
+    void setCb(RpcCb cb) {
         cb_ = cb;
     }
+
+    void setCb(RpcCbFunc cb) {
+        fb_ = cb;
+    }
+
     void callCb() {
-        if(!cb_.empty()){
-            cb_();
+        if(cb_ != NULL){
+            cb_(this);
+        }
+        if(!fb_.empty()) {
+            fb_(this);
         }
     }
 protected:
-    RpcCbFunc cb_;
+    RpcCbFunc fb_;
+    RpcCb cb_;
 };
 
 template <typename T>
@@ -60,6 +68,28 @@ public:
     ClientContext context;
     Status status;
     std::unique_ptr<ClientAsyncResponseReader<T> > response_reader;
+};
+
+
+template <typename T>
+class ClientTask {
+public:
+    ClientTask(AsyncClientTask *task):task_(static_cast<AsyncClientTaskT<T> *>(task)){}
+
+    T &getReply() {
+        return task_->reply;
+    }
+
+    ClientContext &getClientContext() {
+        return task_->context;
+    }
+
+    Status &getStatus() {
+        return task_->status;
+    }
+
+private:
+    AsyncClientTaskT<T> *task_;
 };
 
 
@@ -78,6 +108,18 @@ public:
     
 
     template<typename K, typename T>
+    int doRpc(const K &req, PrepareFunc<K, T> pf, RpcCb cb = NULL) {
+        AsyncClientTaskT<T> *task = new AsyncClientTaskT<T>();
+        //call->response_reader.reset(static_cast<ClientAsyncResponseReader<T>*>(pf()));
+        task->setCb(cb);
+        //task->response_reader = static_cast<ClientAsyncResponseReader<T>*>(pf(&task->context, req, &cq_));
+        task->response_reader = pf(&task->context, req, &cq_);
+        task->response_reader->StartCall();
+        task->response_reader->Finish(&task->reply, &task->status, (void*)task);
+        return 0;
+    }
+
+    template<typename K, typename T>
     int doRpc(const K &req, PrepareFunc<K, T> pf, RpcCbFunc cb = NULL) {
         AsyncClientTaskT<T> *task = new AsyncClientTaskT<T>();
         //call->response_reader.reset(static_cast<ClientAsyncResponseReader<T>*>(pf()));
@@ -88,18 +130,8 @@ public:
         task->response_reader->Finish(&task->reply, &task->status, (void*)task);
         return 0;
     }
-#if 0
-    template<typename T>
-    int doRpc1(PrepareFunc pf, RpcCbFunc cb = NULL) {
-        AsyncClientTaskT<T> *task = new AsyncClientTaskT<T>();
-        //call->response_reader.reset(static_cast<ClientAsyncResponseReader<T>*>(pf()));
-        task->setCb(cb);
-        task->response_reader = static_cast<ClientAsyncResponseReader<T>*>(pf(&task->context, &cq_));
-        task->response_reader->StartCall();
-        task->response_reader->Finish(&task->reply, &task->status, (void*)task);
-        return 0;
-    }
-#endif
+
+
 
 /*
   enum NextStatus {
@@ -159,6 +191,12 @@ public:
             client_.get_server_addr(), grpc::InsecureChannelCredentials());
         stub_ = T::NewStub(channel);
     }
+
+#define SetPrepareFunc(Service, fb) boost::bind(&Service::Stub::fb, stub_.get(), _1, _2, _3)
+#define SetCbFunc(fb) boost::bind(&fb, this, _1)
+//#define GetPrepareFunc(fb) boost::bind(&T::Stub::fb, stub_.get(), _1, _2, _3)
+
+
 
 protected:
     AsyncClient &client_;
