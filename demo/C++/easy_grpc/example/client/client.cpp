@@ -1,11 +1,11 @@
-#include "rpc_service_client.h"
+#include "grpc_client.h"
 #include "helloworld.grpc.pb.h"
 
 using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
 
-void local_getHello(AsyncClientTask *task) {
+void local_getHello(AsyncClientTask *task, std::string name) {
     printf("local_getHello\n");
     ClientTask<HelloReply> clientTask(task);
     //AsyncClientTaskT<HelloReply> *t = static_cast<AsyncClientTaskT<HelloReply> *>(task);
@@ -13,7 +13,7 @@ void local_getHello(AsyncClientTask *task) {
     if(clientTask.getStatus().ok()) {
         printf("local_getHello %s\n", clientTask.getReply().message().c_str());
     }else {
-        printf("RPC failed\n");
+        printf("local_getHello RPC failed, name: %s\n", name.c_str());
     }
 }
 
@@ -25,8 +25,9 @@ public:
         HelloRequest req;
         req.set_name(name);
 
-        //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetCbFunc(GreeterImpl::getHello));
-        client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), local_getHello);
+        //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), local_getHello);
+        client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetCbFuncN(local_getHello, name));
+        //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetClassCbFuncN(GreeterImpl::getHello, this));
         return 0;
     }
   
@@ -47,11 +48,18 @@ public:
 void async_test()
 {
     AsyncClient client("127.0.0.1:50051");
-    GreeterImpl impl(client);    
-    impl.SayHello("yangchuan");
-    impl.SayHello("yangchuan1");
-
-    sleep(2);
+    GreeterImpl impl(client);  
+    char buf[10] = {0};
+    
+    for(int i = 0; i < 20; i++) {
+        sprintf(buf, "test%d", i);
+        impl.SayHello(buf);
+        sleep(1);
+    }
+    
+    //impl.SayHello("yangchuan1");
+    sleep(50);
+    
 }
 
 class GreeterImpl2 : public SyncService<Greeter> {
@@ -77,15 +85,15 @@ void sync_test()
 {
     SyncClient client("127.0.0.1:50051");
     GreeterImpl2 impl(client);  
-    impl.SayHello("yangchuan");
+    impl.SayHello("test");
 
     
 }
 
 int main()
 {   
-    //async_test();
-    sync_test();
+    async_test();
+    //sync_test();
 
     return 0;
 }

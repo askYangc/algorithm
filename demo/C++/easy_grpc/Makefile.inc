@@ -46,15 +46,25 @@ OBJS    += $(patsubst %.cpp, %.o, $(SRCSXX))
 DEPS    += $(patsubst %.cpp, .%.d, $(SRCSXX))
 endif
 
+ifeq ($(PROTOS_PATH), )
 PROTOS_PATH = ./
+endif
+ifeq ($(PROTOC_INC), )
 PROTOC_INC = /usr/local/protobuf3.8/include
-PROTOC_LIB = /usr/local/protobuf3.8/lib
+endif
+ifeq ($(PROTOC), )
 PROTOC = /usr/local/protobuf3.8/bin/protoc
+endif
+ifeq ($(PROTOC_LIB), )
+PROTOC_LIB = /usr/local/protobuf3.8/lib
+endif
+
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-PB = $(wildcard *.proto)
-GB = $(wildcard *.proto)
+PB_PATH = $(wildcard $(PROTOS_PATH)*.proto)
+PB = $(notdir $(PB_PATH))
+GB = $(notdir $(PB_PATH))
 PBSRC = $(patsubst %.proto, %.pb.cc, $(PB))
 GBSRC = $(patsubst %.proto, %.grpc.pb.cc, $(GB))
 PBOBJ = $(patsubst %.pb.cc, %.pb.o, $(PBSRC))
@@ -62,6 +72,8 @@ GBOBJ = $(patsubst %.grpc.pb.cc, %.grpc.pb.o, $(GBSRC))
 PBHEAD = $(patsubst %.pb.cc, %.pb.h, $(PBSRC))
 GBHEAD = $(patsubst %.grpc.pb.cc, %.grpc.pb.h, $(GBSRC))
 #$(info $(GBHEAD))
+#$(info $(GBOBJ))
+#$(info $(PBOBJ))
 
 
 PBFLAGS = `pkg-config --cflags protobuf grpc` -I$(PROTOC_INC)
@@ -69,6 +81,14 @@ PBFLAGS = `pkg-config --cflags protobuf grpc` -I$(PROTOC_INC)
 #.PHONY: $(SUBDIRS) $(DEPS) $(OBJS) $(EXEC) $(CPPEXEC) $(SLIB) $(SHLIB)
 
 all: $(SUBDIRS) $(PBOBJ) $(GBOBJ) $(DEP) $(OBJS) $(EXEC) $(CPPEXEC) $(SLIB) $(SHLIB)
+
+%.grpc.pb.o: %.grpc.pb.cc
+	@echo -e "  GB\t$@" 
+	@$(CPP) -c $(CFLAGS) $(CPPFLAGS) $(PBFLAGS) $< -o $@
+
+%.pb.o: %.pb.cc
+	@echo -e "  PB\t$@" 
+	@$(CPP) -c $(CFLAGS) $(CPPFLAGS) $(PBFLAGS) $< -o $@
 
 %.o : %.c
 	@echo -e "  CC\t$@"
@@ -83,23 +103,15 @@ all: $(SUBDIRS) $(PBOBJ) $(GBOBJ) $(DEP) $(OBJS) $(EXEC) $(CPPEXEC) $(SLIB) $(SH
 .%.d : %.cpp
 	@echo -e "  DEP\t$@" 
 	@$(CC) -c -MM $(CFLAGS) $(CPPFLAGS) $< -o $@
-
-%.grpc.pb.o: %.grpc.pb.cc
-	@echo -e "  GB\t$@" 
-	@$(CPP) -c $(CFLAGS) $(CPPFLAGS) $(PBFLAGS) $< -o $@
-
-%.pb.o: %.pb.cc
-	@echo -e "  PB\t$@" 
-	@$(CPP) -c $(CFLAGS) $(CPPFLAGS) $(PBFLAGS) $< -o $@
 	
 
 .PRECIOUS: %.grpc.pb.cc
-%.grpc.pb.cc: %.proto
+%.grpc.pb.cc: $(PROTOS_PATH)%.proto
 	@echo -e "  PROTOC-GRPC\t$@" 
 	@$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
 .PRECIOUS: %.pb.cc
-%.pb.cc: %.proto
+%.pb.cc: $(PROTOS_PATH)%.proto
 	@echo -e "  PROTOC\t$@" 
 	@$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 

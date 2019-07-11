@@ -1,5 +1,5 @@
-#ifndef __RPC_SERVICE_CLIENT_H_
-#define __RPC_SERVICE_CLIENT_H_
+#ifndef __GRPC_CLIENT_H_
+#define __GRPC_CLIENT_H_
 
 #include <queue>
 #include <thread>
@@ -151,7 +151,13 @@ public:
             time.tv_nsec = 0;
             time.clock_type = GPR_TIMESPAN;
             nextStatus = cq_.AsyncNext(&got_tag, &ok, time);
-    
+
+            if(!ok) {
+                //ok为false，自测出来一种情况
+                //服务器收到请求后，不执行finish，表明收到了，但是没应答。
+                //如果出现ok为false的情况，应该提示一下。这种表明服务器忙之类的。
+                continue;
+            }
             if(nextStatus == CompletionQueue::TIMEOUT)
                 continue;
             if(nextStatus == CompletionQueue::SHUTDOWN)
@@ -170,6 +176,7 @@ public:
 
     void stop(){
         running = false;
+        //cq_.Shutdown();
         thread_.join();
     }
 
@@ -193,9 +200,12 @@ public:
     }
 
 #define SetPrepareFunc(Service, fb) boost::bind(&Service::Stub::fb, stub_.get(), _1, _2, _3)
-#define SetCbFunc(fb) boost::bind(&fb, this, _1)
+#define SetCbFuncN(fb, args...) boost::bind(&fb, _1, ##args)
+#define SetClassCbFuncN(fb, this, args...) boost::bind(&fb, this, _1, ##args)
+
 //#define GetPrepareFunc(fb) boost::bind(&T::Stub::fb, stub_.get(), _1, _2, _3)
 
+    
 
 
 protected:
@@ -242,7 +252,6 @@ public:
     }
 
 
-    //::grpc::Status SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response) override;
 #define SetSyncRpcFunc(Service, fb) boost::bind(&Service::Stub::fb, stub_.get(), _1, _2, _3)
 
     template<typename K, typename N>

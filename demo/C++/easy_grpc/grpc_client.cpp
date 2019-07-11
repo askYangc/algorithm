@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "rpc_service_client.h"
+#include "grpc_client.h"
 
 
 void hello()
