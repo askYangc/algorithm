@@ -1,33 +1,40 @@
-½«grpcµÄC++½Ì³Ì¼òµ¥·â×°£¬Ã»ÓĞ´¦ÀíÁ÷Ê½rpc¡£
+å°†grpcçš„C++æ•™ç¨‹ç®€å•å°è£…ï¼Œæ²¡æœ‰å¤„ç†æµå¼rpcã€‚
 
-clientĞèÒª×¢ÒâµÄµØ·½
-1£¬ĞèÒªÊµÏÖÒ»¸ö¼Ì³ĞserviceµÄÀà£¬Èç
-Í¬²½Îª
+clientéœ€è¦æ³¨æ„çš„åœ°æ–¹
+
+
+1ï¼Œéœ€è¦å®ç°ä¸€ä¸ªç»§æ‰¿serviceçš„ç±»ï¼Œå¦‚
+åŒæ­¥ä¸º
 class GreeterImpl2 : public SyncService<Greeter> {}
-Òì²½Îª
+
+
+å¼‚æ­¥ä¸º
 class GreeterImpl : public AsyncService<Greeter> {}
 
-2£¬µ÷ÓÃÍ¬²½rpcµÄÊ±ºò£¬µ÷ÓÃ·½Ê½Îª
+2ï¼Œè°ƒç”¨åŒæ­¥rpcçš„æ—¶å€™ï¼Œè°ƒç”¨æ–¹å¼ä¸º
+    
+    
     SyncClientTask<HelloReply> *task = doRpc<HelloRequest, HelloReply>(req, SetSyncRpcFunc(Greeter, SayHello));
-    ¸ù¾İtask->getStatus().ok()µÃµ½·µ»Ø½á¹û
+    æ ¹æ®task->getStatus().ok()å¾—åˆ°è¿”å›ç»“æœ
 
-3£¬µ÷ÓÃÒì²½rpcµÄÊ±ºò£¬ÓĞÈıÖÖµ÷ÓÃ·½Ê½.
+3ï¼Œè°ƒç”¨å¼‚æ­¥rpcçš„æ—¶å€™ï¼Œæœ‰ä¸‰ç§è°ƒç”¨æ–¹å¼.
+        
         //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), local_getHello);
         client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetCbFuncN(local_getHello, name));
         //client_.doRpc<HelloRequest, HelloReply>(req, SetPrepareFunc(Greeter, PrepareAsyncSayHello), SetClassCbFuncN(GreeterImpl::getHello, this));
-    µÚÒ»ÖÖ£¬ÉèÖÃ»Øµ÷º¯ÊıÎªlocal_helloº¯Êı¡£local_helloº¯ÊıµÄ²ÎÊıÎªvoid local_getHello(AsyncClientTask *task);
-    µÚ¶şÖÖ£¬ÉèÖÃ»Øµ÷º¯ÊıÓÃSetCbFuncNºêÉèÖÃ£¬local_getHelloº¯ÊıµÄÉùÃ÷Îªvoid local_getHello(AsyncClientTask *task, std::string name);
-    µÚÈıÖÖ£¬ÉèÖÃ»Øµ÷º¯ÊıÓÃSetClassCbFuncNºêÉèÖÃ£¬GreeterImpl::getHelloµÄº¯ÊıÉùÃ÷Îªvoid getHello(AsyncClientTask *task);
+    ç¬¬ä¸€ç§ï¼Œè®¾ç½®å›è°ƒå‡½æ•°ä¸ºlocal_helloå‡½æ•°ã€‚local_helloå‡½æ•°çš„å‚æ•°ä¸ºvoid local_getHello(AsyncClientTask *task);
+    ç¬¬äºŒç§ï¼Œè®¾ç½®å›è°ƒå‡½æ•°ç”¨SetCbFuncNå®è®¾ç½®ï¼Œlocal_getHelloå‡½æ•°çš„å£°æ˜ä¸ºvoid local_getHello(AsyncClientTask *task, std::string name);
+    ç¬¬ä¸‰ç§ï¼Œè®¾ç½®å›è°ƒå‡½æ•°ç”¨SetClassCbFuncNå®è®¾ç½®ï¼ŒGreeterImpl::getHelloçš„å‡½æ•°å£°æ˜ä¸ºvoid getHello(AsyncClientTask *task);
 
-4£¬ClientTask<HelloReply> task
-    ClientTaskÓÃÓÚ·â×°Ò»ÏÂÓ¦´ğ£¬Êı¾İ¶¼´æÔÚ¸ÃÓ¦´ğÖ®ÖĞ¡£
+4ï¼ŒClientTask<HelloReply> task
+    ClientTaskç”¨äºå°è£…ä¸€ä¸‹åº”ç­”ï¼Œæ•°æ®éƒ½å­˜åœ¨è¯¥åº”ç­”ä¹‹ä¸­ã€‚
     
 
-5£¬cq_.AsyncNext(&got_tag, &ok, time);
-    //¿Í»§¶ËµÄokÎªfalse£¬×Ô²â³öÀ´Ò»ÖÖÇé¿ö
-    //·şÎñÆ÷ÊÕµ½ÇëÇóºó£¬²»Ö´ĞĞfinish£¬±íÃ÷ÊÕµ½ÁË£¬µ«ÊÇÃ»´¦Àí£¬Ò»Ö±³ÖÓĞ¡£
-    //Èç¹û³öÏÖokÎªfalseµÄÇé¿ö£¬Ó¦¸ÃÌáÊ¾Ò»ÏÂ¡£ÕâÖÖ±íÃ÷·şÎñÆ÷Ã¦Ö®ÀàµÄ¡£
-    //¼°Ê±time³¬Ê±ÁË£¬okÒ²ÊÇ1£¬²»»á³öÏÖÆäËû´íÎó¡£
+5ï¼Œcq_.AsyncNext(&got_tag, &ok, time);
+    //å®¢æˆ·ç«¯çš„okä¸ºfalseï¼Œè‡ªæµ‹å‡ºæ¥ä¸€ç§æƒ…å†µ
+    //æœåŠ¡å™¨æ”¶åˆ°è¯·æ±‚åï¼Œä¸æ‰§è¡Œfinishï¼Œè¡¨æ˜æ”¶åˆ°äº†ï¼Œä½†æ˜¯æ²¡å¤„ç†ï¼Œä¸€ç›´æŒæœ‰ã€‚
+    //å¦‚æœå‡ºç°okä¸ºfalseçš„æƒ…å†µï¼Œåº”è¯¥æç¤ºä¸€ä¸‹ã€‚è¿™ç§è¡¨æ˜æœåŠ¡å™¨å¿™ä¹‹ç±»çš„ã€‚
+    //åŠæ—¶timeè¶…æ—¶äº†ï¼Œokä¹Ÿæ˜¯1ï¼Œä¸ä¼šå‡ºç°å…¶ä»–é”™è¯¯ã€‚
    
    
     
