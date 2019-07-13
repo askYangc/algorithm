@@ -8,7 +8,7 @@ PROTOS_PATH = ../protos/
 GRPC_INC = `pkg-config --cflags protobuf grpc`
 GRPC_LIB = `pkg-config --libs protobuf grpc++ grpc`
 
-CPPFLAGS += -I../../ --std=c++11 $(GRPC_INC)
+CPPFLAGS += -g -I../../ --std=c++11 $(GRPC_INC)
 LDFLAGS += -L$(PROTOC_LIB) -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -pthread\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\

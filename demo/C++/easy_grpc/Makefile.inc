@@ -95,7 +95,7 @@ all: $(SUBDIRS) $(PBOBJ) $(GBOBJ) $(DEP) $(OBJS) $(EXEC) $(CPPEXEC) $(SLIB) $(SH
 	@$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 %.o : %.cpp
 	@echo -e "  CPP\t$@"
-	@$(CPP) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+	$(CPP) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 .%.d : %.c
 	@echo -e "  DEP\t$@" 

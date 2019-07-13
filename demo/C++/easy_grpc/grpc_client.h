@@ -151,17 +151,19 @@ public:
             time.tv_nsec = 0;
             time.clock_type = GPR_TIMESPAN;
             nextStatus = cq_.AsyncNext(&got_tag, &ok, time);
+            
+            if(nextStatus == CompletionQueue::SHUTDOWN)
+                break;
 
             if(!ok) {
                 //ok为false，自测出来一种情况
                 //服务器收到请求后，不执行finish，表明收到了，但是没应答。
                 //如果出现ok为false的情况，应该提示一下。这种表明服务器忙之类的。
+                printf("AsyncNext ok failed, Server maybe busy\n");
                 continue;
             }
             if(nextStatus == CompletionQueue::TIMEOUT)
                 continue;
-            if(nextStatus == CompletionQueue::SHUTDOWN)
-                break;
             //CompletionQueue::GOT_EVENT
             AsyncClientTask *task = static_cast<AsyncClientTask*>(got_tag);
             task->callCb();    

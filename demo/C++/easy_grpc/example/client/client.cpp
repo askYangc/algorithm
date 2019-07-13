@@ -14,6 +14,7 @@ void local_getHello(AsyncClientTask *task, std::string name) {
         printf("local_getHello %s\n", clientTask.getReply().message().c_str());
     }else {
         printf("local_getHello RPC failed, name: %s\n", name.c_str());
+        printf("local_getHello1 %s\n", clientTask.getReply().message().c_str());
     }
 }
 

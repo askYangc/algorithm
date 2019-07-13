@@ -8,7 +8,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpc/support/log.h>
 
-
+#include "grpc_server.h"
 #include "helloworld.grpc.pb.h"
 
 using grpc::Server;
@@ -181,10 +181,38 @@ class ServerImpl final {
   std::thread tt;
 };
 
-int main(int argc, char** argv) {
-  ServerImpl server;
-  server.test();
-  server.Run();
+class GreeterServiceImpl {
+public:
+    Status SayHello(ServerContext* context, const HelloRequest* request, HelloReply* reply) {
+        std::string prefix("Hello ");
+        reply->set_message(prefix + request->name());
+        printf("GreeterServiceImpl\n");
+        //return Status::CANCELLED;
+        return Status::OK;
+    }  
 
-  return 0;
+    Greeter::AsyncService greeter;
+};
+
+
+int main(int argc, char** argv) {
+  //ServerImpl server;
+  //server.test();
+  //server.Run();
+
+    AsyncServer server("0.0.0.0:50051");
+    GreeterServiceImpl impl;
+    server.RegisterService(&impl.greeter);
+    server.start();
+
+    //requestfunc must after start()
+    RegisterFuncImplN(&server, HelloRequest, HelloReply, Greeter, &impl.greeter, GreeterServiceImpl, SayHello, &impl, 1);    
+
+    while(1) {
+        sleep(2);
+        //break;
+    }
+    //server.stop();
+
+    return 0;
 }
