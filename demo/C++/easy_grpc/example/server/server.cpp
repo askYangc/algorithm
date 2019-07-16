@@ -181,7 +181,7 @@ class ServerImpl final {
   std::thread tt;
 };
 
-class GreeterServiceImpl {
+class GreeterServiceImpl :public Greeter::AsyncService {
 public:
     Status SayHello(ServerContext* context, const HelloRequest* request, HelloReply* reply) {
         std::string prefix("Hello ");
@@ -191,7 +191,7 @@ public:
         return Status::OK;
     }  
 
-    Greeter::AsyncService greeter;
+    //Greeter::AsyncService greeter;
 };
 
 
@@ -202,11 +202,11 @@ int main(int argc, char** argv) {
 
     AsyncServer server("0.0.0.0:50051");
     GreeterServiceImpl impl;
-    server.RegisterService(&impl.greeter);
+    server.RegisterService(&impl);
     server.start();
 
     //requestfunc must after start()
-    RegisterFuncImplN(&server, HelloRequest, HelloReply, Greeter, &impl.greeter, GreeterServiceImpl, SayHello, &impl, 1);    
+    RegisterFuncImpl(&server, HelloRequest, HelloReply, GreeterServiceImpl, &impl, SayHello);    
 
     while(1) {
         sleep(2);

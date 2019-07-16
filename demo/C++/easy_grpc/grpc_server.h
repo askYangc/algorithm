@@ -23,16 +23,16 @@ using RequestFunc = boost::function<void (ServerContext*, K*, ServerAsyncRespons
 template<typename K, typename T>
 using CallRpcFunc = boost::function<Status (ServerContext*, const K*, T*)>;
 
-#define JoinRequestFunc(Service, FB) &Service::AsyncService::Request##FB
+#define JoinRequestFunc(Service, FB) &Service::Request##FB
 
-#define RegisterFuncImpl(asyncServer_, K, T, ClassService, asyncService, ClassRpcServiceImpl, func, this) do {\
-    RequestFunc<K, T> rb = boost::bind(JoinRequestFunc(ClassService, func), asyncService, _1, _2, _3, _4, _5, _6);\
+#define RegisterFuncImpl(asyncServer_, K, T, ClassRpcServiceImpl, this, func) do {\
+    RequestFunc<K, T> rb = boost::bind(JoinRequestFunc(ClassRpcServiceImpl, func), this, _1, _2, _3, _4, _5, _6);\
     CallRpcFunc<K, T> cb = boost::bind(&ClassRpcServiceImpl::func, this, _1, _2, _3);\
     (asyncServer_)->RegisterFunc<K,T>(rb, cb);\
 }while(0)
 
-#define RegisterFuncImplN(asyncServer_, K, T, ClassService, asyncService, ClassRpcServiceImpl, func, this, count) do {\
-    RequestFunc<K, T> rb = boost::bind(JoinRequestFunc(ClassService, func), asyncService, _1, _2, _3, _4, _5, _6);\
+#define RegisterFuncImplN(asyncServer_, K, T, ClassRpcServiceImpl, this, func, count) do {\
+    RequestFunc<K, T> rb = boost::bind(JoinRequestFunc(ClassRpcServiceImpl, func), this, _1, _2, _3, _4, _5, _6);\
     CallRpcFunc<K, T> cb = boost::bind(&ClassRpcServiceImpl::func, this, _1, _2, _3);\
     (asyncServer_)->RegisterFunc<K,T>(rb, cb, count);\
 }while(0)
