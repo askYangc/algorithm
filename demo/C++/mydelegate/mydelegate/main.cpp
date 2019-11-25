@@ -77,6 +77,7 @@ void *thread_func(void *p)
 	return NULL;
 }
 
+#if 0
 
 int main(int argc, char **argv)
 {
@@ -92,4 +93,21 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+#endif
+
+int main(int argc, char **argv)
+{
+	pthread_t pid;
+	pthread_create(&pid, NULL, thread_func, NULL);
+
+	usleep(10);
+	a.add(boost::bind(&tvobs, _1));
+	a.add(boost::bind(&nbaobs, _1, 5));
+	
+	cout << "will notify all" << endl;
+	a.notifyAll(555);
+
+	return 0;
+}
+
 

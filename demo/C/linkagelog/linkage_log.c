@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "linkageasynclog.h"
 #include "linkage_log.h"
 
 
@@ -17,7 +18,6 @@ linkagelog_proc_t linkagelog_proc[] = {
 };
 
 int linkagelog_proc_len = sizeof(linkagelog_proc)/sizeof(linkagelog_proc_t);
-
 
 void do_linkagelog_proc(linkage_log_header_t *hdr)
 {
@@ -54,4 +54,30 @@ int do_linkageasynclog(char *data, int len)
 	
 	return 0;
 }
+
+void linkagelog_send(char *data, int len)
+{
+	linkagelog_append(data, len + sizeof(linkage_log_header_t));
+}
+
+
+void log_header_set(char *data, u_int16_t ds_command, u_int16_t len)
+{
+	linkage_log_header_t *hdr = (linkage_log_header_t*)data;
+	hdr->ver = 1;
+	hdr->ds_command = ds_command;
+	hdr->len = len;
+}
+
+void linkagelog_init()
+{
+	linkageasynclog_init();
+	linkageasynclog_start();
+}
+
+void linkagelog_stop()
+{
+	linkageasynclog_stop();
+}
+
 

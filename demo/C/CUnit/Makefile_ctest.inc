@@ -21,13 +21,11 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
 RANLIB  = $(CROSS_COMPILE)ranlib
 
-#CFLAGS	+= -Wall -I../include_open -I../zookeeper/include/c-client-src -g $(ARCHGCC) -D_USE_SYSLOG_
+CFLAGS	+= -Wall -I../include_open -I../zookeeper/include/c-client-src -g $(ARCHGCC) -D_USE_SYSLOG_
 #LDFLAGS +=  -lm -ldl -lcrypto -lpthread -lmemcached\
             -L$(MYSQLLIB) -lmysqlclient\
             -L../zookeeper/lib -lzookeeper_mt	
 
-CFLAGS	+= -Wall -g $(ARCHGCC) 
-LDFLAGS += 
 
 VERBOSE	= 0
 

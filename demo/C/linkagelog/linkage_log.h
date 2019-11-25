@@ -10,6 +10,8 @@ enum {
 	LOG_MAX,
 };
 
+
+
 #pragma pack(push,1)
 
 typedef struct {
@@ -20,13 +22,31 @@ typedef struct {
 }linkage_log_header_t;
 
 typedef struct {
+	la_estab_user_info_t old;
+	la_estab_user_info_t up;
+	u_int32_t t;
+}log_motify_userinfo_t;
+
+typedef struct {
+	u_int32_t home_id;
+	u_int32_t doer;
+	u_int32_t old_owner;
+	u_int32_t new_owner;
+	u_int32_t t;
+}log_motify_homeowner_t;
+
+typedef struct {
 	u_int32_t home_id;
 	u_int32_t user_id;
 	u_int64_t sn;
+	u_int32_t t;
 }log_adddev_t;
 
 
 #pragma pack(pop)
+
+#define	get_logheader_payload(hdr, type) (type *)((linkage_log_header_t*)hdr+1)
+
 
 typedef void (*linkagelog_func_t)();
 
@@ -37,5 +57,10 @@ typedef struct {
 }linkagelog_proc_t;
 
 int do_linkageasynclog(char *data, int len);
+void log_header_set(char *data, u_int16_t ds_command, u_int16_t len);
+void linkagelog_send(char *data, int len);
+
+void linkagelog_init();
+void linkagelog_stop();
 
 #endif

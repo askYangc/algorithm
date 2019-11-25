@@ -3,7 +3,6 @@
 #include "condition.h"
 #include <unistd.h>
 
-#include "linkageasynclog.h"
 #include "linkage_log.h"
 
 condition_t *t1;
@@ -71,44 +70,26 @@ int condition_test()
 	return 0;
 }
 
-void do_log()
-{
-	int i = 0;
-	char buf[40] = {0};
-
-	for(i = 0; i < 1000; i++) {
-		int n = sprintf(buf, "hello world %d\n", i);
-		linkagelog_append(buf, n);
-	}
-	
-}
-
 void test_linkagelog()
 {
 	char buf[100] = {0};
-	linkage_log_header_t *hdr;
 	log_adddev_t *t;
 
-	hdr = (linkage_log_header_t*)buf;
+	log_header_set(buf, LOG_ADDDEV, sizeof(log_adddev_t));
 
-	hdr->ver = 1;
-	hdr->ds_command = LOG_ADDDEV;
-	hdr->len = sizeof(log_adddev_t);
-
-	t = (log_adddev_t*)(hdr+1);
+	t = get_logheader_payload(buf, log_adddev_t);
 	t->home_id = 5;
 	t->user_id = 6;
 	t->sn = 808000010001;
 
-	linkagelog_append(buf, sizeof(log_adddev_t) + sizeof(linkage_log_header_t));
+	linkagelog_send(buf, sizeof(log_adddev_t));
 }
 
 int main()
 {
-	linkageasynclog_init();
-	linkageasynclog_start();
+	linkagelog_init();
 	test_linkagelog();
-	linkageasynclog_stop();
+	linkagelog_stop();
 
 	return 0;
 }
