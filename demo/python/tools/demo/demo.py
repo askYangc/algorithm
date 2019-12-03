@@ -5,7 +5,7 @@
 
 __author__ = 'Yang Chuan'
 
-import log
+import log.log as log
 from db import mysqldbc
 from tools import Dict
 import tools

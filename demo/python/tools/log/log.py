@@ -203,14 +203,12 @@ class Logger(object):
         self.logger.error(*args, **kw)
     """
 
-logger = None
-
+"""
 def Debug(*args, **kw):
     if logger is None:
         printErr("LogInit.debug is err")
         return
-    print args
-    print kw
+    print logger.logger.findCaller()
     logger.logger.debug(*args, **kw)
 
 def Info(*args, **kw):
@@ -230,6 +228,7 @@ def Error(*args, **kw):
         printErr("LogInit.error is err")
         return
     logger.logger.error(*args, **kw)
+"""
 
 def ColorDebug(color=GREEN, *args, **kw):
     if logger is None:
@@ -276,24 +275,20 @@ def getLevel():
 def getLevelInfo():
     return logger.getLevelInfo()
 
+logger = None
+Debug = None
+Info = None
+Warning = None
+Error = None
+
 def LogInit(filename="all.log", level='warning', mode=LOG_STD):
-    global logger
+    global logger,Debug,Info,Warning,Error
     logger = Logger(filename, level, mode=mode)
+    Debug = logger.logger.debug
+    Info = logger.logger.info
+    Warning = logger.logger.warning
+    Error = logger.logger.error
 
-
-"""
-def Debug(*args, **kw):
-    log.debug(*args, **kw)
-
-def Info(*args, **kw):
-    log.info(*args, **kw)
-
-def Warn(*args, **kw):
-    log.warning(*args, **kw)
-
-def Error(*args, **kw):
-    log.error(*args, **kw)
-"""
 
 
 if __name__ == '__main__':

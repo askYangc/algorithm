@@ -5,7 +5,7 @@
 
 __author__ = 'Yang Chuan'
 
-import log
+import log.log as log
 from db import mysqldbc
 from tools import Dict
 import tools
@@ -13,6 +13,12 @@ import tools
 
 def do_test1():
     log.LogInit("udpserver-out", "debug", log.LOG_STD)
+
+
+    log.Debug("%s okok", 2)
+    log.Info("%s okok", 2)
+    log.Warning("%s okok" % (2,))
+    log.Error("%s okok", 2)
 
     log.ColorDebug(log.GREEN, "%s okok", 2)
     log.ColorInfo(log.GREEN, "%s okok", 2)
@@ -55,5 +61,50 @@ def do_test4():
     #d = tools.todict(d)
     print type(d)
 
+def do_test5():
+    import time
+    log.LogInit("udpserver-out", "debug", log.LOG_STD)
+    k = {"autocommit":True}
+    #db = mysqldbc("ijmaster", "ijjazhang", "sync_ijdbs", **k)
+    db = mysqldbc("ijmaster", "ijjazhang", "sync_ijdbs")
+    db.mysql_connect()
+
+    db.begin()
+    #time.sleep(10)
+    sql = 'insert into test(name, num) value("nnn", 1)'
+    r = db.insert(sql)
+    db.info()
+    #db.commit()
+    if r is not None:
+        print "insert ok"
+        db.begin()
+        #time.sleep(10)
+        db.insert(sql)
+        db.commit()
+        db.commit()
+    else:
+        print "insert failed"
+        db.rollback()
+        db.info()
+
+    sql = 'select * from test'
+    print db.select(sql)
+    db.info()
+    sql = 'insert into test(name, num) value("nnn", 1)'
+    #sql = 'update test set num=1 where id=83'
+    #db.update(sql)
+
+
+    #time.sleep(10)
+    db.begin()
+    #sql = 'select * from test'
+    print db.insert(sql)
+    db.info()
+    db.commit()
+    db.info()
+
+    print "over"
+
+
 if __name__ == "__main__":
-    do_test4()
+    do_test5()
