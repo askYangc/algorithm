@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"leaf/network/tcp"
+	"net"
 	"unsafe"
 )
 
@@ -90,20 +90,11 @@ func (hdr *Tcph) Unpack(data []byte) (uint32, error) {
 }
 
 // goroutine safe
-func (p *TcphParser) Read(c interface{}) ([]byte, error) {
+func (p *TcphParser) Read(conn net.Conn) ([]byte, error) {
 	var buffer bytes.Buffer
 	tcph := &Tcph{}
 
 	bufMsgLen := make([]byte, tcph.GetLen())
-	var conn *tcp.TCPConn
-
-	switch i := c.(type) {
-		case *tcp.TCPConn:
-			conn = c.(*tcp.TCPConn)
-		default:
-			_ = i
-			panic("c is not *tcp.TCPConn")
-	}
 
 	// read head
 	if _, err := io.ReadFull(conn, bufMsgLen); err != nil {
@@ -126,17 +117,7 @@ func (p *TcphParser) Read(c interface{}) ([]byte, error) {
 }
 
 // goroutine safe
-func (p *TcphParser) Write(c interface{}, args ...[]byte) error {
-	var conn *tcp.TCPConn
-
-	switch i := c.(type) {
-	case *tcp.TCPConn:
-		conn = c.(*tcp.TCPConn)
-	default:
-		_ = i
-		panic("c is not *tcp.TCPConn")
-	}
-
+func (p *TcphParser) Write(conn net.Conn, args ...[]byte) error {
 	for i := 0; i < len(args); i++ {
 		conn.Write(args[i])
 	}

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 	"math"
-	"leaf/network/tcp"
+	"net"
 )
 
 type ExampleTcpParser struct {
@@ -60,18 +60,9 @@ func (p *ExampleTcpParser) SetByteOrder(littleEndian bool) {
 }
 
 // goroutine safe
-func (p *ExampleTcpParser) Read(c interface{}) ([]byte, error) {
+func (p *ExampleTcpParser) Read(conn net.Conn) ([]byte, error) {
 	var b [4]byte
 	bufMsgLen := b[:p.lenMsgLen]
-	var conn *tcp.TCPConn
-
-	switch i := c.(type) {
-		case *tcp.TCPConn:
-			conn = c.(*tcp.TCPConn)
-		default:
-			_ = i
-			panic("c is not *tcp.TCPConn")
-	}
 
 	// read len
 	if _, err := io.ReadFull(conn, bufMsgLen); err != nil {
@@ -114,17 +105,7 @@ func (p *ExampleTcpParser) Read(c interface{}) ([]byte, error) {
 }
 
 // goroutine safe
-func (p *ExampleTcpParser) Write(c interface{}, args ...[]byte) error {
-	var conn *tcp.TCPConn
-
-	switch i := c.(type) {
-	case *tcp.TCPConn:
-		conn = c.(*tcp.TCPConn)
-	default:
-		_ = i
-		panic("c is not *tcp.TCPConn")
-	}
-
+func (p *ExampleTcpParser) Write(conn net.Conn, args ...[]byte) error {
 	// get len
 	var msgLen uint32
 	for i := 0; i < len(args); i++ {

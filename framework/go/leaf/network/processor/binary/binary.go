@@ -13,7 +13,6 @@ type Processor struct {
 
 type MsgInfo struct {
 	msgRouter     *chanrpc.Server
-	receiver	interface{}
 }
 
 type BinaryMsg struct {
