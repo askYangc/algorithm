@@ -1,7 +1,7 @@
 package msg
 
 import (
-	"leaf/network/example/json"
+	"leaf/network/processor/json"
 )
 
 var Processor = json.NewProcessor()

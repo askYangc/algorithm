@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"reflect"
-	"leaf/network/parser"
-	"leaf/network/processor/json"
-	"leaf/network/interf"
-	"leaf/network/tcp"
 	"leaf/log"
-	"leafserver/msg"
+	"leaf/network/interf"
+	"leaf/network/parser"
+	"leaf/network/processor/binary"
+	"leaf/network/tcp"
+	"reflect"
 	"time"
 )
 
@@ -31,11 +31,42 @@ func (a *agent) WriteMsg(msg interface{}) {
 	}
 }
 
+func (a *agent) auth() {
+	tcph := &parser.Tcph{}
+
+	param := []byte("hello leaf")
+
+	tcph.Ver = 1
+	tcph.Request = 1
+	tcph.Hlen = 4
+	tcph.Encrypt = 0
+	tcph.Command = 242
+	tcph.Param_len = uint32(len(param))
+
+	b, err := tcph.Pack()
+	if err != nil{
+		fmt.Println("Pack failed")
+	}
+
+	var buffer bytes.Buffer
+	buffer.Write(b)
+	buffer.Write(param)
+	total := buffer.Bytes()
+
+	a.WriteMsg(total)
+}
+
+func getreply(u interface{}) {
+	msg := u.(*binary.BinaryMsg)
+	fmt.Printf("msg: %u\n", msg.Cmd)
+	tcph := &parser.Tcph{}
+	offset, _ := tcph.Unpack(msg.B)
+	fmt.Printf("%s\n", msg.B[offset:])
+}
+
 func (a *agent) Run() {
 	fmt.Println("in run")
-	a.WriteMsg(&msg.Hello{
-		Name:"leaf",
-	})
+	a.auth()
 
 	data, err := a.conn.ReadMsg()
 	if err != nil {
@@ -49,8 +80,7 @@ func (a *agent) Run() {
 			log.Debug("unmarshal message error: %v", err)
 			return
 		}
-		c := m.(*msg.Hello)
-		fmt.Println(c.Name)
+		getreply(m)
 	}
 
 }
@@ -59,11 +89,11 @@ func (a *agent) OnClose() {
 
 }
 
-var Processor = json.NewProcessor()
+var Processor = binary.NewProcessor()
 
 func main() {
 	addr := "127.0.0.1:3563"
-	Processor.Register(&msg.Hello{})
+	//Processor.Register(242)
 	client := &tcp.TCPClient{
 		Addr: addr,
 		ConnNum: 1,
@@ -73,7 +103,7 @@ func main() {
 			a.processor = Processor
 			return a
 		},
-		MsgParser: parser.NewExampleParser(),
+		MsgParser: parser.NewTcphParser(),
 	}
 
 	client.Start()

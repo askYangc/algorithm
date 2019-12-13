@@ -3,8 +3,8 @@ package internal
 import (
 	"leaf/gate"
 	"leaf/network/parser"
-	"leafserver/conf"
-	"leafserver/msg"
+	"tcpserver/conf"
+	"tcpserver/msg"
 )
 
 type Module struct {
@@ -12,7 +12,7 @@ type Module struct {
 }
 
 func (m *Module) OnInit() {
-	p := parser.NewExampleParser()
+	p := parser.NewTcphParser()
 	m.Gate = &gate.Gate{
 		MaxConnNum:      conf.Server.MaxConnNum,
 		PendingWriteNum: conf.PendingWriteNum,
