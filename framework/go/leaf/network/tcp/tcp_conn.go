@@ -9,17 +9,17 @@ import (
 
 type TCPConn struct {
 	sync.Mutex
-	conn      net.Conn
+	Conn      net.Conn
 	writeChan chan []byte
 	closeFlag bool
-	msgParser interf.MsgParser
+	transReceiver interf.TransReceiver
 }
 
-func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser interf.MsgParser) *TCPConn {
+func newTCPConn(conn net.Conn, pendingWriteNum int, transReceiver interf.TransReceiver) *TCPConn {
 	tcpConn := new(TCPConn)
-	tcpConn.conn = conn
+	tcpConn.Conn = conn
 	tcpConn.writeChan = make(chan []byte, pendingWriteNum)
-	tcpConn.msgParser = msgParser
+	tcpConn.transReceiver = transReceiver
 
 	go func() {
 		for b := range tcpConn.writeChan {
@@ -43,8 +43,8 @@ func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser interf.MsgParser) 
 }
 
 func (tcpConn *TCPConn) doDestroy() {
-	tcpConn.conn.(*net.TCPConn).SetLinger(0)
-	tcpConn.conn.Close()
+	tcpConn.Conn.(*net.TCPConn).SetLinger(0)
+	tcpConn.Conn.Close()
 
 	if !tcpConn.closeFlag {
 		close(tcpConn.writeChan)
@@ -92,21 +92,25 @@ func (tcpConn *TCPConn) Write(b []byte) {
 }
 
 func (tcpConn *TCPConn) Read(b []byte) (int, error) {
-	return tcpConn.conn.Read(b)
+	return tcpConn.Conn.Read(b)
 }
 
 func (tcpConn *TCPConn) LocalAddr() net.Addr {
-	return tcpConn.conn.LocalAddr()
+	return tcpConn.Conn.LocalAddr()
 }
 
 func (tcpConn *TCPConn) RemoteAddr() net.Addr {
-	return tcpConn.conn.RemoteAddr()
+	return tcpConn.Conn.RemoteAddr()
 }
 
 func (tcpConn *TCPConn) ReadMsg() ([]byte, error) {
-	return tcpConn.msgParser.Read(tcpConn.conn)
+	return tcpConn.transReceiver.Read(tcpConn)
 }
 
 func (tcpConn *TCPConn) WriteMsg(args ...[]byte) error {
-	return tcpConn.msgParser.Write(tcpConn.conn, args...)
+	return tcpConn.transReceiver.Write(tcpConn, args...)
+}
+
+func (tcpConn *TCPConn) WriteMsgReliable(args ...[]byte) error {
+	return tcpConn.transReceiver.Write(tcpConn, args...)
 }

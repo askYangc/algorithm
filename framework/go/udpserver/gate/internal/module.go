@@ -2,9 +2,9 @@ package internal
 
 import (
 	"leaf/gate"
-	"leaf/network/parser"
-	"tcpserver/conf"
-	"tcpserver/msg"
+	"leaf/network/receiver"
+	"udpserver/conf"
+	"udpserver/msg"
 )
 
 type Module struct {
@@ -12,13 +12,13 @@ type Module struct {
 }
 
 func (m *Module) OnInit() {
-	p := parser.NewTCPTcphParser()
+	p := receiver.NewTCPTcphReceiver()
 	m.Gate = &gate.Gate{
 		MaxConnNum:      conf.Server.MaxConnNum,
 		PendingWriteNum: conf.PendingWriteNum,
-		TCPAddr:         conf.Server.TCPAddr,
+		UDPAddr:         conf.Server.TCPAddr,
 		Processor:       msg.Processor,
-		MsgParser : 	p,
+		TransReceiver : 	p,
 		AgentChanRPC:    nil,
 	}
 }

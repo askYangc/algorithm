@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"leaf/log"
 	"leaf/network/interf"
-	"leaf/network/parser"
 	"leaf/network/processor/binary"
+	"leaf/network/receiver"
 	"leaf/network/tcp"
 	"reflect"
 	"time"
@@ -32,7 +32,7 @@ func (a *agent) WriteMsg(msg interface{}) {
 }
 
 func (a *agent) auth() {
-	tcph := &parser.Tcph{}
+	tcph := &receiver.Tcph{}
 
 	param := []byte("hello leaf")
 
@@ -59,7 +59,7 @@ func (a *agent) auth() {
 func getreply(u interface{}) {
 	msg := u.(*binary.BinaryMsg)
 	fmt.Printf("msg: %u\n", msg.Cmd)
-	tcph := &parser.Tcph{}
+	tcph := &receiver.Tcph{}
 	offset, _ := tcph.Unpack(msg.B)
 	fmt.Printf("%s\n", msg.B[offset:])
 }
@@ -103,7 +103,7 @@ func main() {
 			a.processor = Processor
 			return a
 		},
-		MsgParser: parser.NewTcphParser(),
+		TransReceiver: receiver.NewExampleTcpReceiver(),
 	}
 
 	client.Start()

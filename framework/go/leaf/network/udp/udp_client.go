@@ -1,13 +1,6 @@
-package tcp
+package udp
 
-import (
-	"leaf/log"
-	"leaf/network/interf"
-	"net"
-	"sync"
-	"time"
-)
-
+/*
 type TCPClient struct {
 	sync.Mutex
 	Addr            string
@@ -20,8 +13,8 @@ type TCPClient struct {
 	wg              sync.WaitGroup
 	closeFlag       bool
 
-	// TransReceiver
-	TransReceiver    interf.TransReceiver
+	// msg parser
+	MsgParser    interf.MsgParser
 }
 
 func (client *TCPClient) Start() {
@@ -51,8 +44,8 @@ func (client *TCPClient) init() {
 	if client.NewConn == nil {
 		log.Fatal("NewAgent must not be nil")
 	}
-	if client.TransReceiver == nil {
-		log.Fatal("TransReceiver must not be nil")
+	if client.MsgParser == nil {
+		log.Fatal("MsgParser must not be nil")
 	}
 	if client.conns != nil {
 		log.Fatal("client is running")
@@ -94,7 +87,7 @@ reconnect:
 	client.conns[conn] = struct{}{}
 	client.Unlock()
 
-	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.TransReceiver)
+	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.MsgParser)
 	agent := client.NewConn(tcpConn)
 	agent.Run()
 
@@ -122,3 +115,4 @@ func (client *TCPClient) Close() {
 
 	client.wg.Wait()
 }
+*/

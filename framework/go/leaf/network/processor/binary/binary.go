@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"leaf/chanrpc"
 	"leaf/log"
-	"leaf/network/parser"
+	"leaf/network/receiver"
 )
 
 type Processor struct {
@@ -55,7 +55,7 @@ func (p *Processor) Route(m interface{}, userData interface{}) error {
 }
 
 func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
-	tcph := &parser.Tcph{}
+	tcph := &receiver.Ucph{}
 	tcph.Unpack(data)
 
 	msg := new(BinaryMsg)

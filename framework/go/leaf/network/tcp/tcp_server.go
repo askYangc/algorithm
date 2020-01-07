@@ -22,8 +22,8 @@ type TCPServer struct {
 	wgConns         sync.WaitGroup
 	ConnNum			uint32
 
-	//msg parser
-	MsgParser    interf.MsgParser
+	//TransReceiver
+	TransReceiver    interf.TransReceiver
 }
 
 func (server *TCPServer) Start() {
@@ -49,8 +49,8 @@ func (server *TCPServer) init() {
 	if server.NewConn == nil {
 		log.Fatal("NewSession must not be nil")
 	}
-	if server.MsgParser == nil {
-		log.Fatal("msgParser must not be nil")
+	if server.TransReceiver == nil {
+		log.Fatal("transReceiver must not be nil")
 	}
 
 	server.ln = ln
@@ -95,7 +95,7 @@ func (server *TCPServer) run() {
 
 		server.wgConns.Add(1)
 
-		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.MsgParser)
+		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.TransReceiver)
 		agent := server.NewConn(tcpConn)
 
 		go func() {

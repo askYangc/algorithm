@@ -3,10 +3,11 @@ package gate
 import (
 	"leaf/chanrpc"
 	"leaf/log"
-	"net"
-	"reflect"
 	"leaf/network/interf"
 	"leaf/network/tcp"
+	"leaf/network/udp"
+	"net"
+	"reflect"
 )
 
 type Gate struct {
@@ -17,19 +18,37 @@ type Gate struct {
 
 	// tcp
 	TCPAddr      string
-	MsgParser    interf.MsgParser
+	TransReceiver    interf.TransReceiver
+
+	//udp
+	UDPAddr      string
 }
 
 func (gate *Gate) Run(closeSig chan bool) {
 	var tcpServer *tcp.TCPServer
+	var udpServer *udp.UDPServer
 	if gate.TCPAddr != "" {
 		tcpServer = new(tcp.TCPServer)
 		tcpServer.Addr = gate.TCPAddr
 		tcpServer.MaxConnNum = gate.MaxConnNum
 		tcpServer.PendingWriteNum = gate.PendingWriteNum
-		tcpServer.MsgParser = gate.MsgParser
+		tcpServer.TransReceiver = gate.TransReceiver
 
 		tcpServer.NewConn = func(conn *tcp.TCPConn) interf.ConnAgent {
+			a := &agent{conn: conn, gate: gate}
+			if gate.AgentChanRPC != nil {
+				gate.AgentChanRPC.Go("NewAgent", a)
+			}
+			return a
+		}
+	}
+
+	if gate.UDPAddr != "" {
+		udpServer = new(udp.UDPServer)
+		udpServer.Addr = gate.UDPAddr
+		udpServer.PendingWriteNum = gate.PendingWriteNum
+
+		udpServer.NewConn = func(conn interf.Conn) interf.ConnAgent {
 			a := &agent{conn: conn, gate: gate}
 			if gate.AgentChanRPC != nil {
 				gate.AgentChanRPC.Go("NewAgent", a)
@@ -41,11 +60,20 @@ func (gate *Gate) Run(closeSig chan bool) {
 	if tcpServer != nil {
 		tcpServer.Start()
 	}
+
+	if udpServer != nil {
+		udpServer.Start()
+	}
+
 	<-closeSig
 
 	if tcpServer != nil {
 		tcpServer.Close()
 	}
+	if udpServer != nil {
+		udpServer.Close()
+	}
+
 }
 
 func (gate *Gate) OnDestroy() {}
@@ -96,6 +124,20 @@ func (a *agent) WriteMsg(msg interface{}) {
 			return
 		}
 		err = a.conn.WriteMsg(data...)
+		if err != nil {
+			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
+		}
+	}
+}
+
+func (a *agent) WriteMsgReliable(msg interface{}) {
+	if a.gate.Processor != nil {
+		data, err := a.gate.Processor.Marshal(msg)
+		if err != nil {
+			log.Error("marshal message %v error: %v", reflect.TypeOf(msg), err)
+			return
+		}
+		err = a.conn.WriteMsgReliable(data...)
 		if err != nil {
 			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
 		}
