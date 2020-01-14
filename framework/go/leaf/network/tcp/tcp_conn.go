@@ -107,10 +107,7 @@ func (tcpConn *TCPConn) ReadMsg() ([]byte, error) {
 	return tcpConn.transReceiver.Read(tcpConn)
 }
 
-func (tcpConn *TCPConn) WriteMsg(args ...[]byte) error {
+func (tcpConn *TCPConn) WriteMsg(f interf.Flags, args ...[]byte) error {
 	return tcpConn.transReceiver.Write(tcpConn, args...)
 }
 
-func (tcpConn *TCPConn) WriteMsgReliable(args ...[]byte) error {
-	return tcpConn.transReceiver.Write(tcpConn, args...)
-}

@@ -2,15 +2,16 @@ package udp
 
 import (
 	"fmt"
+	"leaf/network/interf"
 	"net"
 	"sync"
 )
 
 type UDPConn struct {
 	sync.Mutex
-	addr *net.UDPAddr
-	server *UDPServer
-	closeFlag bool
+	Addr *net.UDPAddr
+	Server *UDPServer
+	CloseFlag bool
 
 	RecvChan	chan []byte
 }
@@ -23,15 +24,15 @@ func newUDPConn(server *UDPServer, pendingWriteNum int) *UDPConn {
 }
 
 func (udpConn *UDPConn) Init(server *UDPServer, pendingWriteNum int) {
-	udpConn.server = server
+	udpConn.Server = server
 	udpConn.RecvChan = make(chan []byte, pendingWriteNum)
-	udpConn.closeFlag = false
+	udpConn.CloseFlag = false
 }
 
 func (udpConn *UDPConn) destroy() {
-	if !udpConn.closeFlag {
+	if !udpConn.CloseFlag {
+		udpConn.CloseFlag = true
 		close(udpConn.RecvChan)
-		udpConn.closeFlag = true
 	}
 }
 
@@ -47,11 +48,11 @@ func (udpConn *UDPConn) Close() {
 }
 
 func (udpConn *UDPConn) LocalAddr() net.Addr {
-	return udpConn.server.LocalAddr
+	return udpConn.Server.LocalAddr
 }
 
 func (udpConn *UDPConn) RemoteAddr() net.Addr {
-	return udpConn.addr
+	return udpConn.Addr
 }
 
 //这里考虑加一个定时，以免RecvChan阻塞导致整个系统阻塞
@@ -59,7 +60,7 @@ func (udpConn *UDPConn) TransMsg(b []byte) (error) {
 	udpConn.Lock()
 	defer udpConn.Unlock()
 
-	if udpConn.closeFlag || b == nil {
+	if udpConn.CloseFlag || b == nil {
 		return nil
 	}
 
@@ -74,19 +75,17 @@ func (udpConn *UDPConn) ReadMsg() ([]byte, error) {
 	return nil, fmt.Errorf("RecvChan maybe close")
 }
 
-func (udpConn *UDPConn) WriteMsg(args ...[]byte) error {
+
+func (udpConn *UDPConn) WriteMsg(f interf.Flags, args ...[]byte) error {
+	return udpConn.WriteMsgDirect(args...)
+}
+
+func (udpConn *UDPConn) WriteMsgDirect(args ...[]byte) error {
 	for i := 0; i < len(args); i++ {
-		msg := &UDPSendMsg{buf:args[i], addr:udpConn.addr}
-		udpConn.server.SendList <- msg
+		msg := &UDPSendMsg{buf:args[i], addr:udpConn.Addr}
+		udpConn.Server.SendList <- msg
 	}
 	return nil
 }
 
-func (udpConn *UDPConn) WriteMsgReliable(args ...[]byte) error {
-	for i := 0; i < len(args); i++ {
-		msg := &UDPSendMsg{buf:args[i], addr:udpConn.addr}
-		udpConn.server.SendList <- msg
-	}
-	return nil
-}
 

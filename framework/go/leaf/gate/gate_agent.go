@@ -1,11 +1,13 @@
 package gate
 
-import "net"
+import (
+	"leaf/network/interf"
+	"net"
+)
 
 /* 用于应用层调用使用的user_data */
 type GateAgent interface {
-	WriteMsg(msg interface{})
-	WriteMsgReliable(msg interface{})
+	WriteMsg(flag interf.Flags, msg interface{})
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
 	Close()

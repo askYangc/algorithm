@@ -1,11 +1,19 @@
 package interf
 
-import "net"
+import (
+	"net"
+)
+
+type Flags struct {
+	Cmd   uint32
+	IsRequest bool
+	IsReliable bool
+	Flags uint8
+}
 
 type Conn interface {
 	ReadMsg() ([]byte, error)
-	WriteMsg(args ...[]byte) error
-	WriteMsgReliable(args ...[]byte) error
+	WriteMsg(f Flags, args ...[]byte) error
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
 	Close()

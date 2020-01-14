@@ -32,7 +32,7 @@ type UDPServer struct {
 	SendList		chan *UDPSendMsg
 
 	//udp Session
-	Sessions    interf.UDPSessioner
+	Sessionser    interf.UDPSessioner
 	NewConn     func(interf.Conn) interf.ConnAgent
 }
 
@@ -59,8 +59,8 @@ func (server *UDPServer) init() {
 
 	server.SendList = make(chan *UDPSendMsg, server.SendListCount)
 
-	if server.Sessions == nil {
-		server.Sessions = NewUDPSessionManager(server)
+	if server.Sessionser == nil {
+		log.Error("Sessionser is nil")
 	}
 
 	if server.PendingWriteNum == 0 {
@@ -71,7 +71,10 @@ func (server *UDPServer) init() {
 
 	go func() {
 		for msg := range server.SendList {
-			conn.WriteToUDP(msg.buf, msg.addr)
+			_, err := conn.WriteToUDP(msg.buf, msg.addr)
+			if err != nil {
+				break
+			}
 		}
 		fmt.Printf("send list over\n")
 	}()
@@ -92,7 +95,7 @@ func (server *UDPServer) run() {
 			break
 		}
 
-		server.Sessions.RouteToSession(buf, n, addr)
+		server.Sessionser.RouteToSession(buf[:n], addr)
 	}
 }
 
@@ -101,7 +104,7 @@ func (server *UDPServer) Close() {
 	server.Conn.Close()
 	server.wgLn.Wait()
 
-	server.Sessions.Stop()
+	server.Sessionser.Stop()
 	server.Conn = nil
 	server.LocalAddr = nil
 	close(server.SendList)

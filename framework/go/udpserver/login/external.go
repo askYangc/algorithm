@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"leaf/gate"
 	"leaf/log"
+	"leaf/network/interf"
 	"leaf/network/receiver"
-	"leaf/util"
 	"udpserver/login/internal"
 )
 
@@ -18,27 +18,21 @@ func Dohello(args []interface{}) {
 	m := args[0].([]byte)
 	a := args[1].(gate.GateAgent)
 
-	tcph := &receiver.Ucph{}
-	offset,_ := tcph.Unpack(m)
+	ucph := &receiver.Ucph{}
+	offset,_ := ucph.Unpack(m)
 	log.Debug("data: %hhu, ver: %hhu, hlen: %hhu, enc: %hhu, req: %hhu, request_id:%hhu,  cmd: %hu, len:%u\n",
-		m[0], tcph.Ver, tcph.Hlen, tcph.Encrypt, tcph.Request, tcph.Request_id, tcph.Command, tcph.Param_len)
+		m[0], ucph.Ver, ucph.Hlen, ucph.Encrypt, ucph.Request, ucph.Request_id, ucph.Command, ucph.Param_len)
 
 	ar := &receiver.ClientAuthRequest{}
 	offset,_ = ar.Unpack(m[offset:])
 
 	log.Debug("get action %d, ver %d username %s, rand1 %s\n", ar.Action, ar.Action, ar.Username, ar.Rand1)
 
-	tcph.Request = 0
-	tcph.Client_sid = 1
-
 	reply := []byte("hello client")
 
-	tcph.Param_len = uint16(len(reply))
-	br, _ := tcph.Pack()
-	br = util.ByteJoin(br, reply)
-	fmt.Println(br)
-	fmt.Printf("data %s\n", br)
-	a.WriteMsg(br)
+	fmt.Println(reply)
+	fmt.Printf("data %s\n", reply)
+	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0}, reply)
 }
 
 func DoReset(args []interface{}) {
@@ -47,4 +41,17 @@ func DoReset(args []interface{}) {
 
 	fmt.Println("get close")
 	a.Close()
+
+}
+
+func DoKeeplive(args []interface{}) {
+	m := args[0].([]byte)
+	a := args[1].(gate.GateAgent)
+
+	ucph := receiver.Ucph{}
+	ucph.Unpack(m)
+
+	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0}, []byte{})
+	//a.Close()
+
 }

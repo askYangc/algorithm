@@ -22,6 +22,7 @@ type Gate struct {
 
 	//udp
 	UDPAddr      string
+	Sessioner interf.UDPSessioner
 }
 
 func (gate *Gate) Run(closeSig chan bool) {
@@ -47,6 +48,8 @@ func (gate *Gate) Run(closeSig chan bool) {
 		udpServer = new(udp.UDPServer)
 		udpServer.Addr = gate.UDPAddr
 		udpServer.PendingWriteNum = gate.PendingWriteNum
+		udpServer.Sessionser = gate.Sessioner
+		udpServer.Sessionser.SetServer(udpServer)
 
 		udpServer.NewConn = func(conn interf.Conn) interf.ConnAgent {
 			a := &agent{conn: conn, gate: gate}
@@ -116,28 +119,14 @@ func (a *agent) OnClose() {
 	}
 }
 
-func (a *agent) WriteMsg(msg interface{}) {
+func (a *agent) WriteMsg(flag interf.Flags, msg interface{}) {
 	if a.gate.Processor != nil {
 		data, err := a.gate.Processor.Marshal(msg)
 		if err != nil {
 			log.Error("marshal message %v error: %v", reflect.TypeOf(msg), err)
 			return
 		}
-		err = a.conn.WriteMsg(data...)
-		if err != nil {
-			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
-		}
-	}
-}
-
-func (a *agent) WriteMsgReliable(msg interface{}) {
-	if a.gate.Processor != nil {
-		data, err := a.gate.Processor.Marshal(msg)
-		if err != nil {
-			log.Error("marshal message %v error: %v", reflect.TypeOf(msg), err)
-			return
-		}
-		err = a.conn.WriteMsgReliable(data...)
+		err = a.conn.WriteMsg(flag, data...)
 		if err != nil {
 			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
 		}

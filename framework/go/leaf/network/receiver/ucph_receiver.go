@@ -31,6 +31,20 @@ type ClientAuthRequest struct {
 	Uuid [16]byte
 }
 
+func NewUcph(cmd uint16, param_len uint16, is_request uint8, is_enc uint8, flag uint8) (*Ucph){
+	hdr := &Ucph{}
+
+	hdr.Ver = 1
+	hdr.Hlen = uint8(hdr.GetLen()/4)
+	hdr.Command = cmd
+	hdr.Param_len = param_len
+	hdr.Request = is_request
+	hdr.Encrypt = is_enc
+	hdr.Flag = flag
+
+	return hdr
+}
+
 func (ar *ClientAuthRequest) GetLen() (uint32) {
 	return 40
 }
