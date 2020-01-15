@@ -94,7 +94,6 @@ func (s *UDPSessionManager) CreateSession(user *ClientUser, addr *net.UDPAddr, a
 	clientSession.cond = util.MakeSingleCond()
 	clientSession.cid = cid
 	clientSession.user = user
-	clientSession.m = s
 	clientSession.myRequestId = 0
 	clientSession.peerRequestId = 0
 
@@ -108,6 +107,7 @@ func (s *UDPSessionManager) CreateSession(user *ClientUser, addr *net.UDPAddr, a
 
 	s.wgConns.Add(2)
 	agent := s.server.NewConn(clientSession)
+	clientSession.UpdateDieTimer(time.Second*10)
 
 	fmt.Printf("now create session cid %u\n", cid)
 	go func() {
@@ -160,6 +160,12 @@ func (s *UDPSessionManager) CreateSession(user *ClientUser, addr *net.UDPAddr, a
 		s.wgConns.Done()
 	}()
 
+	go func() {
+		<- clientSession.tDie.C
+		fmt.Println("get timeout")
+		clientSession.Close()
+	}()
+
 	return clientSession, nil
 }
 
@@ -183,7 +189,6 @@ func (s *UDPSessionManager) CloseSession(cid uint32) (bool){
 	}
 
 	session.Close()
-	s.DeleteSession(session)
 	return true
 }
 
@@ -291,7 +296,7 @@ func (s *UDPSessionManager) ClientSessionGet(buf []byte, addr *net.UDPAddr) (*Cl
 			}else {
 				log.Debug("usersession:0x%08X have new device connect(%s), delete old one(%s)\n",
 					user.auth_session.cid, addr.String(), user.auth_session.Addr.String());
-				user.auth_session.Destory(true)
+				user.auth_session.Close()
 			}
 		}
 
@@ -316,6 +321,7 @@ func (s *UDPSessionManager) ClientSessionGet(buf []byte, addr *net.UDPAddr) (*Cl
 func (s *UDPSessionManager) RouteToSession(buf []byte, addr *net.UDPAddr) {
 	session, err := s.ClientSessionGet(buf[:], addr)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	s.routeMsgToSession(session, buf)

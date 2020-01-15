@@ -32,7 +32,7 @@ func Dohello(args []interface{}) {
 
 	fmt.Println(reply)
 	fmt.Printf("data %s\n", reply)
-	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0}, reply)
+	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0, 0}, reply)
 }
 
 func DoReset(args []interface{}) {
@@ -48,10 +48,11 @@ func DoKeeplive(args []interface{}) {
 	m := args[0].([]byte)
 	a := args[1].(gate.GateAgent)
 
+	//fmt.Println("get keep")
 	ucph := receiver.Ucph{}
 	ucph.Unpack(m)
 
-	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0}, []byte{})
+	a.WriteMsg(interf.Flags{uint32(ucph.Command),false, false, 0, ucph.Request_id}, []byte{})
 	//a.Close()
 
 }

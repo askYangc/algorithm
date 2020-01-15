@@ -6,6 +6,7 @@ import (
 	"leaf/network/receiver"
 	"leaf/network/udp"
 	"leaf/util"
+	"time"
 )
 
 type ClientSession struct {
@@ -16,7 +17,6 @@ type ClientSession struct {
 	hashKey string
 
 	user *ClientUser
-	m *UDPSessionManager
 
 	cond		util.SingleCond
 	SendQueue 	*util.Queue
@@ -24,6 +24,16 @@ type ClientSession struct {
 
 	myRequestId uint8
 	peerRequestId uint8
+
+	tDie	*time.Timer
+}
+
+func (s *ClientSession) UpdateDieTimer(t time.Duration) {
+	if s.tDie == nil {
+		s.tDie = time.NewTimer(t)
+	}else {
+		s.tDie.Reset(t)
+	}
 }
 
 func (s *ClientSession) RequestAdd(ucph *receiver.Ucph, args ...[]byte) error {
@@ -110,6 +120,8 @@ func (s *ClientSession) ReadMsg() ([]byte, error) {
 			s.RequestDel()
 		}
 
+		s.UpdateDieTimer(time.Second*10)
+
 		return msg, nil
 	}
 }
@@ -121,6 +133,7 @@ func (s *ClientSession) WriteMsg(f interf.Flags, args ...[]byte) error {
 	}
 	ucph := receiver.NewUcph(uint16(f.Cmd), 0, is_request, 0, f.Flags)
 	ucph.Client_sid = s.cid
+	ucph.Request_id = f.ReqId
 
 	if f.IsRequest && f.IsReliable {
 		return s.RequestAdd(ucph, args...)
@@ -138,11 +151,14 @@ func (s *ClientSession) WriteMsg(f interf.Flags, args ...[]byte) error {
 }
 
 func (s *ClientSession) Destory(sendReset bool) {
+	if s.CloseFlag {
+		return
+	}
 	if sendReset {
 		//send reset
 	}
 
-	s.m.DeleteSession(s)
+	s.tDie.Stop()
 	s.cond.Notify()
 	s.UDPConn.Close()
 }

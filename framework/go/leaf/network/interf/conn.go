@@ -9,6 +9,7 @@ type Flags struct {
 	IsRequest bool
 	IsReliable bool
 	Flags uint8
+	ReqId	uint8
 }
 
 type Conn interface {
